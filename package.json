@@ -1,14 +1,21 @@
 {
   "dependencies": {
     "@nestjs/common": "^11.1.6",
+    "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.6",
     "@nestjs/platform-express": "^11.1.6",
-    "rxjs": "^7.8.2"
+    "@nestjs/typeorm": "^11.0.0",
+    "pg": "^8.16.3",
+    "rxjs": "^7.8.2",
+    "typeorm": "^0.3.26"
   },
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
-    "build": "nest build"
+    "build": "nest build",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./data-source.ts",
+    "migration:generate": "npm run typeorm -- migration:generate src/migrations/InitialSchema",
+    "migration:run": "npm run typeorm -- migration:run"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.10",
