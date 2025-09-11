@@ -6,6 +6,10 @@ export enum UserRole {
   PATIENT = 'patient',
 }
 
+export enum AuthProvider {
+  GOOGLE = 'google',
+}
+
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -15,12 +19,21 @@ export class User {
   email: string;
 
   @Column()
+  name: string;
+
+  @Column({
+    type: 'enum',
+    enum: AuthProvider,
+  })
+  provider: AuthProvider;
+
+
+  @Column({ nullable: true })
   password_hash: string;
 
   @Column({
     type: 'enum',
     enum: UserRole,
-    default: UserRole.PATIENT,
   })
   role: UserRole;
 

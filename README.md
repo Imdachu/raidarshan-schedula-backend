@@ -66,3 +66,144 @@ src/
 
 ---
 ````
+# Schedula API - NestJS + TypeORM + PostgreSQL
+
+## Project Overview
+Schedula API is a backend application built with **NestJS** using **TypeORM** to interact with a **PostgreSQL** database.  
+It manages **Users, Doctors, and Patients** entities, providing a solid foundation for scheduling and healthcare-related functionality.
+
+---
+
+## Features
+- User management with roles: `admin`, `doctor`, `patient`
+- Doctor and Patient profiles linked to Users
+- Database migrations with TypeORM
+- PostgreSQL integration
+- Ready for further development (appointments, authentication, etc.)
+
+---
+
+## Tech Stack
+- **Backend Framework:** NestJS
+- **ORM:** TypeORM
+- **Database:** PostgreSQL
+- **Language:** TypeScript
+- **Environment Management:** dotenv
+
+---
+
+## Prerequisites
+- Node.js v18+
+- PostgreSQL installed and running
+- npm installed
+- Optional: pgAdmin for database visualization
+
+---
+
+## Setup
+
+### 1. Clone the repository
+```bash
+git clone <repository_url>
+cd Schedula-API-Artisans
+
+
+
+# Task 4 – Google OAuth Role-Based Authentication
+
+## 🎯 Objective
+
+Implement authentication in NestJS using **Google OAuth** with **role-based access** (`doctor` | `patient`).
+
+---
+
+## 🛠 Tech
+
+* NestJS + Passport.js
+* `passport-google-oauth20`, `@nestjs/jwt`
+* Any DB (Postgres/Mongo) for user persistence
+
+---
+
+## 🧱 User Schema
+
+```ts
+{
+  id: string;
+  email: string;
+  name: string;
+  provider: 'google';
+  password: null;
+  role: 'doctor' | 'patient';
+}
+```
+
+---
+
+## ⚙️ Setup
+
+### 1. Install
+
+```bash
+npm i @nestjs/passport passport passport-google-oauth20 @nestjs/jwt passport-jwt
+npm i -D @types/passport-google-oauth20
+```
+
+### 2. Google OAuth Credentials
+
+1. Create project in [Google Cloud Console](https://console.cloud.google.com).
+2. Enable **Google People API**.
+3. Configure **OAuth consent screen** (Branding → Scopes → Audience=External → Contact).
+4. Create **OAuth Client ID**:
+
+   * Application Type = Web App
+   * **Authorized origins** → `http://localhost:3000`
+   * **Redirect URI** → `http://localhost:3000/api/v1/auth/google/callback`
+5. Copy **Client ID & Secret**.
+
+### 3. `.env`
+
+```env
+GOOGLE_CLIENT_ID=xxx
+GOOGLE_CLIENT_SECRET=xxx
+GOOGLE_CALLBACK_URL=http://localhost:3000/api/v1/auth/google/callback
+JWT_SECRET=supersecretkey
+```
+
+---
+
+## 🚀 API Endpoints
+
+| Method | Endpoint                           | Purpose                      |
+| ------ | ---------------------------------- | ---------------------------- |
+| GET    | `/api/v1/auth/google?role=doctor`  | Start Google login (doctor)  |
+| GET    | `/api/v1/auth/google?role=patient` | Start Google login (patient) |
+| GET    | `/api/v1/auth/google/callback`     | Handle Google callback → JWT |
+
+---
+
+## 🔐 Flow
+
+1. User hits `/auth/google?role=doctor`.
+2. Redirects to Google login.
+3. Callback → extract profile.
+4. If user exists → login. Else → create user with role.
+5. Issue **JWT** containing `{ id, email, role }`.
+
+---
+
+## 📂 Structure
+
+```
+src/
+ ┣ auth/
+ ┃ ┣ auth.controller.ts
+ ┃ ┣ auth.service.ts
+ ┃ ┣ google.strategy.ts
+ ┃ ┗ google-auth.guard.ts
+ ┣ users/
+ ┃ ┣ users.service.ts
+ ┃ ┗ users.entity.ts
+```
+
+---
