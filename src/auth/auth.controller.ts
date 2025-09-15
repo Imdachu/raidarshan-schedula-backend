@@ -2,6 +2,8 @@ import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from './google-auth.guard'; 
+import { Post, Body, ValidationPipe } from '@nestjs/common';
+import { RegisterPatientDto } from './dto/register-patient.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -20,5 +22,10 @@ export class AuthController {
   async googleAuthRedirect(@Req() req) {
     // This function handles the callback after the user consents
     return this.authService.googleLogin(req);
+  }
+  
+  @Post('register')
+  async register(@Body(ValidationPipe) registerPatientDto: RegisterPatientDto) {
+    return this.authService.registerPatient(registerPatientDto);
   }
 }

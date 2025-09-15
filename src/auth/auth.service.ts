@@ -1,3 +1,6 @@
+import * as bcrypt from 'bcrypt';
+import { RegisterPatientDto } from './dto/register-patient.dto';
+import { ConflictException } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -43,4 +46,63 @@ export class AuthService {
       user,
     };
   }
+  
+// Inside the AuthService class
+
+async registerPatient(registerPatientDto: RegisterPatientDto) {
+
+  const { email, password, name } = registerPatientDto;
+
+
+
+  // Check if user already exists
+
+  const existingUser = await this.userRepository.findOne({ where: { email } });
+
+  if (existingUser) {
+
+    throw new ConflictException('Email already exists');
+
+  }
+
+
+
+  // Hash the password
+
+  const salt = await bcrypt.genSalt();
+
+  const hashedPassword = await bcrypt.hash(password, salt);
+
+
+
+  // Create and save the new user
+
+  const newUser = this.userRepository.create({
+
+    email,
+
+    password_hash: hashedPassword,
+
+    name,
+
+    role: UserRole.PATIENT, // Set role to PATIENT
+
+    provider: null, // This is a local registration, not Google
+
+  });
+
+
+
+  await this.userRepository.save(newUser);
+
+
+
+  // Remove password from the response
+
+  delete newUser.password_hash;
+
+  return newUser;
+
+}
+        
 }
