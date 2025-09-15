@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User, UserRole, AuthProvider } from '../users/user.entity';
 import { JwtService } from '@nestjs/jwt';
+import { UnauthorizedException } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -14,11 +15,12 @@ export class AuthService {
 
   async googleLogin(req) {
     if (!req.user) {
-      return 'No user from google';
+      throw new UnauthorizedException('No user information from Google');
     }
 
-    const { email, firstName, lastName } = req.user;
-    const role = req.query.state === 'doctor' ? UserRole.DOCTOR : UserRole.PATIENT;
+    const { email, name } = req.user;
+    const fullName = name?.givenName && name?.familyName ? `${name.givenName} ${name.familyName}` : name || 'Unknown';
+    const role = req.user.state === 'doctor' ? UserRole.DOCTOR : UserRole.PATIENT;
 
     let user = await this.userRepository.findOne({ where: { email } });
 
@@ -26,7 +28,7 @@ export class AuthService {
       // Create new user if they don't exist
       const newUser = this.userRepository.create({
         email,
-        name: `${firstName} ${lastName}`,
+        name: fullName,
         provider: AuthProvider.GOOGLE,
         role,
       });
@@ -34,9 +36,9 @@ export class AuthService {
     }
 
     // Generate JWT token
-    const payload = { email: user.email, sub: user.id, role: user.role };
+    const payload = { email: user.email, sub: user.id, role: user.role, name: user.name };
     return {
-      message: 'User information from google',
+      message: user ? 'Logged in successfully' : 'User created and logged in successfully',
       token: this.jwtService.sign(payload),
       user,
     };
