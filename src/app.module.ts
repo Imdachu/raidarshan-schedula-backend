@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { HelloController } from './hello/hello.controller';
 import { AuthModule } from './auth/auth.module';
+import { DoctorsModule } from './doctors/doctors.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
       autoLoadEntities: true, // Automatically load all entities
       synchronize: false, // DEV only: auto-creates schema. We'll replace this with migrations.
     }),
+     DoctorsModule,
   ],
  controllers: [HelloController],
   providers: [],
