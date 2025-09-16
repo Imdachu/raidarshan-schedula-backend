@@ -5,6 +5,10 @@ import { GoogleAuthGuard } from './google-auth.guard';
 import { Post, Body, ValidationPipe } from '@nestjs/common';
 import { RegisterPatientDto } from './dto/register-patient.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { Patch, Request } from '@nestjs/common';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
+
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -33,5 +37,12 @@ export class AuthController {
   @Post('verify-otp')
   async verifyOtp(@Body(ValidationPipe) verifyOtpDto: VerifyOtpDto) {
     return this.authService.verifyOtp(verifyOtpDto);
+  }
+
+  @Patch('onboarding')
+  @UseGuards(JwtAuthGuard)
+  async updateOnboarding(@Request() req, @Body(ValidationPipe) updateOnboardingDto: UpdateOnboardingDto) {
+    const userId = req.user.userId; // userId is from the JWT payload
+    return this.authService.updateOnboardingStep(userId, updateOnboardingDto.step);
   }
 }

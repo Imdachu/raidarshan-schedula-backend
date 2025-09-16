@@ -127,5 +127,16 @@ async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     token: this.jwtService.sign(payload),
   };
 }
+async updateOnboardingStep(userId: string, step: number) {
+  const user = await this.userRepository.findOne({ where: { id: userId } });
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  user.onboarding_step = step;
+  await this.userRepository.save(user);
+
+  return { message: 'Onboarding step updated successfully', step: user.onboarding_step };
+}
         
 }

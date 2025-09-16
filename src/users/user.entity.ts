@@ -44,6 +44,9 @@ export class User {
   @Column({ nullable: true })
   otp: string;
 
+  @Column({ type: 'int', default: 0 })
+  onboarding_step: number;
+
   @CreateDateColumn()
   created_at: Date;
 
