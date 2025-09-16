@@ -1,5 +1,5 @@
-import { User } from '../users/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Appointment } from '../appointments/appointment.entity';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('patients')
 export class Patient {
@@ -9,10 +9,8 @@ export class Patient {
   @Column()
   name: string;
 
-  @Column({ type: 'date', nullable: true })
-  date_of_birth: Date;
+  @Column({ nullable: true })
+  contact: string;
 
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  // Add other fields as needed
 }

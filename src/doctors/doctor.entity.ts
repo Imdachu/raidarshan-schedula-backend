@@ -1,5 +1,9 @@
-import { User } from '../users/user.entity';
-import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+
+export enum ScheduleType {
+  WAVE = 'wave',
+  STREAM = 'stream',
+}
 
 @Entity('doctors')
 export class Doctor {
@@ -10,13 +14,14 @@ export class Doctor {
   name: string;
 
   @Column()
-  specialty: string;
+  specialization: string;
 
+  @Column()
+  location: string;
 
-  @Column({ type: 'int', nullable: true, default: 0 }) 
-  experience: number; 
-
-  @OneToOne(() => User)
-  @JoinColumn({ name: 'user_id' })
-  user: User;
+  @Column({
+    type: 'enum',
+    enum: ScheduleType,
+  })
+  schedule_type: ScheduleType;
 }
