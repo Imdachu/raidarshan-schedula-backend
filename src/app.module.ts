@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { HelloController } from './hello/hello.controller';
 import { AuthModule } from './auth/auth.module';
 import { DoctorsModule } from './doctors/doctors.module';
+import { SchedulesModule } from './schedules/schedules.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { DoctorsModule } from './doctors/doctors.module';
       synchronize: false, // DEV only: auto-creates schema. We'll replace this with migrations.
     }),
      DoctorsModule,
+     SchedulesModule,
   ],
  controllers: [HelloController],
   providers: [],

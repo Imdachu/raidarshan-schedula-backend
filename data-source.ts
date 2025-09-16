@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { User } from './src/users/user.entity';
 import { Doctor } from './src/doctors/doctor.entity';
 import { Patient } from './src/patients/patient.entity';
+import { DoctorSchedule } from './src/schedules/schedule.entity'; 
 
 config();
 
@@ -14,6 +15,7 @@ export default new DataSource({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
   schema: 'public',
-  entities: [User, Doctor, Patient], // 👈 direct imports
+  entities: [User, Doctor, Patient, DoctorSchedule], // 👈 direct imports
   migrations: ['src/migrations/*.ts'], // in dev, use .ts
+  synchronize: false,
 });
