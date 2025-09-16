@@ -8,6 +8,7 @@ export enum UserRole {
 
 export enum AuthProvider {
   GOOGLE = 'google',
+  EMAIL = 'email',
 }
 
 @Entity('users')
@@ -36,6 +37,12 @@ export class User {
     enum: UserRole,
   })
   role: UserRole;
+
+  @Column({ default: false })
+  is_verified: boolean;
+
+  @Column({ nullable: true })
+  otp: string;
 
   @CreateDateColumn()
   created_at: Date;

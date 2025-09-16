@@ -4,6 +4,7 @@ import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from './google-auth.guard'; 
 import { Post, Body, ValidationPipe } from '@nestjs/common';
 import { RegisterPatientDto } from './dto/register-patient.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -27,5 +28,10 @@ export class AuthController {
   @Post('register')
   async register(@Body(ValidationPipe) registerPatientDto: RegisterPatientDto) {
     return this.authService.registerPatient(registerPatientDto);
+  }
+
+  @Post('verify-otp')
+  async verifyOtp(@Body(ValidationPipe) verifyOtpDto: VerifyOtpDto) {
+    return this.authService.verifyOtp(verifyOtpDto);
   }
 }

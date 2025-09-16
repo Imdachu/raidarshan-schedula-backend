@@ -7,6 +7,8 @@ import { Repository } from 'typeorm';
 import { User, UserRole, AuthProvider } from '../users/user.entity';
 import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { NotFoundException } from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -53,8 +55,6 @@ async registerPatient(registerPatientDto: RegisterPatientDto) {
 
   const { email, password, name } = registerPatientDto;
 
-
-
   // Check if user already exists
 
   const existingUser = await this.userRepository.findOne({ where: { email } });
@@ -65,8 +65,6 @@ async registerPatient(registerPatientDto: RegisterPatientDto) {
 
   }
 
-
-
   // Hash the password
 
   const salt = await bcrypt.genSalt();
@@ -74,6 +72,9 @@ async registerPatient(registerPatientDto: RegisterPatientDto) {
   const hashedPassword = await bcrypt.hash(password, salt);
 
 
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  console.log(`Generated OTP for ${email}: ${otp}`);
+  
 
   // Create and save the new user
 
@@ -87,15 +88,13 @@ async registerPatient(registerPatientDto: RegisterPatientDto) {
 
     role: UserRole.PATIENT, // Set role to PATIENT
 
-    provider: null, // This is a local registration, not Google
+    provider: AuthProvider.EMAIL, // This is a local registration, not Google
+    
+    otp, // Save the OTP
 
   });
 
-
-
   await this.userRepository.save(newUser);
-
-
 
   // Remove password from the response
 
@@ -103,6 +102,30 @@ async registerPatient(registerPatientDto: RegisterPatientDto) {
 
   return newUser;
 
+}
+async verifyOtp(verifyOtpDto: VerifyOtpDto) {
+  const { email, otp } = verifyOtpDto;
+
+  const user = await this.userRepository.findOne({ where: { email } });
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+
+  if (user.otp !== otp) {
+    throw new UnauthorizedException('Invalid OTP');
+  }
+
+  // Mark user as verified and clear OTP
+  user.is_verified = true;
+  user.otp = null;
+  await this.userRepository.save(user);
+
+  // You can generate a JWT token here for automatic login after verification
+  const payload = { email: user.email, sub: user.id, role: user.role };
+  return {
+    message: 'User verified successfully',
+    token: this.jwtService.sign(payload),
+  };
 }
         
 }
