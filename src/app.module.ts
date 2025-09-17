@@ -11,12 +11,14 @@ import { Patient } from './patients/patient.entity';
 import { DoctorSchedule } from './schedules/schedule.entity';
 import { Slot } from './slots/slot.entity';
 import { User } from './users/user.entity';
+import { AppointmentsModule } from './appointments/appointments.module'; 
 
 @Module({
   imports: [
     AuthModule,
     DoctorsModule,
     SchedulesModule,
+    AppointmentsModule,
     ConfigModule.forRoot({
       isGlobal: true, // Makes the config available application-wide
     }),
