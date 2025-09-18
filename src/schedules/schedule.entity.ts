@@ -6,6 +6,16 @@ export enum WaveMode {
   DOCTOR = 'doctor',
 }
 
+export enum Weekday {
+  SUNDAY = 'sunday',
+  MONDAY = 'monday',
+  TUESDAY = 'tuesday',
+  WEDNESDAY = 'wednesday',
+  THURSDAY = 'thursday',
+  FRIDAY = 'friday',
+  SATURDAY = 'saturday',
+}
+
 @Entity('doctor_schedules')
 export class DoctorSchedule {
   @PrimaryGeneratedColumn('uuid')
@@ -17,6 +27,9 @@ export class DoctorSchedule {
 
   @Column({ type: 'date' })
   date: string;
+
+  @Column({ type: 'enum', enum: Weekday, nullable: true })
+  weekday: Weekday;
 
   @Column({ type: 'enum', enum: WaveMode, nullable: true })
   wave_mode: WaveMode;
