@@ -94,59 +94,70 @@ export class SchedulesService {
     return this.scheduleRepository.save(newSchedule);
   }
   async findAvailableSlots(doctorId: string, date: string) {
-    const schedule = await this.scheduleRepository.findOne({
+    // 1. Find all schedules for this doctor that apply to the date
+    // a) One-off schedules for this date
+    const oneOffSchedules = await this.scheduleRepository.find({
       where: { doctor: { id: doctorId }, date },
     });
 
-    if (!schedule) {
+    // b) Recurring schedules for the weekday of this date
+    const weekday = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    // Weekday enum is lowercase (e.g., 'monday')
+    const recurringSchedules = await this.scheduleRepository
+      .createQueryBuilder('schedule')
+      .leftJoin('schedule.doctor', 'doctor')
+      .where('doctor.id = :doctorId', { doctorId })
+      .andWhere(':weekday = ANY(schedule.weekdays)', { weekday })
+      .getMany();
+
+    const allSchedules = [...oneOffSchedules, ...recurringSchedules];
+    if (allSchedules.length === 0) {
       return {
         doctorId,
         date,
-        slots: [], // No schedule found for this day
+        slots: [],
       };
     }
 
-    // Logic to generate slots
+    // 2. Generate slots for each schedule
     const slots = [];
-    const { consulting_start, consulting_end, slot_duration, capacity_per_slot } = schedule;
-
-    let currentTime = new Date(`${date}T${consulting_start}`);
-    const endTime = new Date(`${date}T${consulting_end}`);
-
-    while (currentTime < endTime) {
-      const slotStartTime = currentTime;
-      const slotEndTime = new Date(slotStartTime.getTime() + slot_duration * 60000);
-
-      const startTimeString = slotStartTime.toTimeString().substring(0, 5);
-      const endTimeString = slotEndTime.toTimeString().substring(0, 5);
-      
-      // Count existing appointments for this slot
-      const bookedCount = await this.appointmentRepository.count({
-        where: {
-          doctor: { id: doctorId },
-          assigned_time: startTimeString,
-          // You might need to add a date check here in the future if appointments span multiple days
-        },
-      });
-
-      const available = capacity_per_slot - bookedCount;
-
-      slots.push({
-        slotId: `d${doctorId}-${date.replace(/-/g, '')}-${startTimeString.replace(':', '')}`,
-        startTime: startTimeString,
-        endTime: endTimeString,
-        capacity: capacity_per_slot,
-        available: available > 0 ? available : 0,
-      });
-
-      currentTime = slotEndTime;
+    for (const schedule of allSchedules) {
+      const { consulting_start, consulting_end, slot_duration, capacity_per_slot, id: scheduleId, wave_mode } = schedule;
+      let currentTime = new Date(`${date}T${consulting_start}`);
+      const endTime = new Date(`${date}T${consulting_end}`);
+      while (currentTime < endTime) {
+        const slotStartTime = currentTime;
+        const slotEndTime = new Date(slotStartTime.getTime() + slot_duration * 60000);
+        // Only add slot if it fits completely within consulting_end
+        if (slotEndTime <= endTime) {
+          const startTimeString = slotStartTime.toTimeString().substring(0, 5);
+          const endTimeString = slotEndTime.toTimeString().substring(0, 5);
+          // Count existing appointments for this slot
+          const bookedCount = await this.appointmentRepository.count({
+            where: {
+              doctor: { id: doctorId },
+              assigned_time: startTimeString,
+              // Add date check if needed
+            },
+          });
+          const available = capacity_per_slot - bookedCount;
+          slots.push({
+            slotId: `d${doctorId}-${scheduleId}-${date.replace(/-/g, '')}-${startTimeString.replace(':', '')}`,
+            startTime: startTimeString,
+            endTime: endTimeString,
+            capacity: capacity_per_slot,
+            available: available > 0 ? available : 0,
+            scheduleType: schedule.date ? 'one-off' : 'recurring',
+            waveMode: wave_mode,
+          });
+        }
+        currentTime = slotEndTime;
+      }
     }
-
+    // 3. Return all slots combined
     return {
       doctorId,
       date,
-      scheduleType: 'wave',
-      waveMode: schedule.wave_mode,
       slots,
     };
   }
