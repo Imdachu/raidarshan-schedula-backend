@@ -25,23 +25,40 @@ export class AppointmentsService {
   ) {}
 
   async create(
-    patientId: string,
+    userId: string,
     confirmAppointmentDto: ConfirmAppointmentDto,
   ): Promise<Appointment> {
     const { slotId } = confirmAppointmentDto;
 
-    // Parse the composite slotId
-    const [idPrefix, dateString, timeString] = slotId.split('-');
-    const doctorId = idPrefix.substring(1);
-    const date = `${dateString.substring(0, 4)}-${dateString.substring(
-      4,
-      6,
-    )}-${dateString.substring(6, 8)}`;
-    const assigned_time = `${timeString.substring(0, 2)}:${timeString.substring(
-      2,
-      4,
-    )}`;
+    const timeString = slotId.substring(slotId.lastIndexOf('-') + 1);
+    const dateString = slotId.substring(
+      slotId.lastIndexOf('-', slotId.lastIndexOf('-') - 1) + 1,
+      slotId.lastIndexOf('-'),
+    );
+    const doctorIdWithPrefix = slotId.substring(
+      0,
+      slotId.lastIndexOf('-', slotId.lastIndexOf('-') - 1),
+    );
+    
+    if (!timeString || !dateString || !doctorIdWithPrefix.startsWith('d')) {
+      throw new Error('Invalid slotId format');
+    }
+    
+    const doctorId = doctorIdWithPrefix.substring(1); // Remove the 'd' prefix
+    const date = `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
+    const assigned_time = `${timeString.substring(0, 2)}:${timeString.substring(2, 4)}`;
 
+
+    // Find patient profile linked to the logged-in user
+    const patient = await this.patientRepository.findOne({
+      where: { user: { id: userId } },
+    });
+    if (!patient) {
+      throw new NotFoundException(
+        'Patient profile not found for the logged-in user',
+      );
+    }
+    
     // Use a transaction to ensure data consistency
     return this.dataSource.transaction(async (transactionalEntityManager) => {
       const doctor = await transactionalEntityManager.findOne(Doctor, {
@@ -51,12 +68,6 @@ export class AppointmentsService {
         throw new NotFoundException('Doctor not found');
       }
 
-      const patient = await transactionalEntityManager.findOne(Patient, {
-        where: { id: patientId },
-      });
-      if (!patient) {
-        throw new NotFoundException('Patient not found');
-      }
 
       const schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
         where: { doctor: { id: doctorId }, date },

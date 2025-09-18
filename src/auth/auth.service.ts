@@ -9,12 +9,15 @@ import { JwtService } from '@nestjs/jwt';
 import { UnauthorizedException } from '@nestjs/common';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { NotFoundException } from '@nestjs/common';
+import { Patient } from '../patients/patient.entity';
 
 @Injectable()
 export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Patient)
+    private readonly patientRepository: Repository<Patient>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -95,6 +98,13 @@ async registerPatient(registerPatientDto: RegisterPatientDto) {
   });
 
   await this.userRepository.save(newUser);
+
+  const newPatient = this.patientRepository.create({
+    name,
+    user: newUser,
+  });
+  await this.patientRepository.save(newPatient);
+
 
   // Remove password from the response
 

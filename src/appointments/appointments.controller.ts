@@ -16,7 +16,9 @@ export class AppointmentsController {
   ): Promise<Appointment> {
     // We assume the patient's ID is in the JWT payload
     // You may need to adjust this based on your User/Patient entity relationship
-    const patientId = req.user.userId; // This assumes user.id and patient.id are the same for a logged-in patient
-    return this.appointmentsService.create(patientId, confirmAppointmentDto);
+    const userId = req.user.userId; 
+    console.log(userId);
+
+    return this.appointmentsService.create(userId, confirmAppointmentDto);
   }
 }

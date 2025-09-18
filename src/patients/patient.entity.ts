@@ -1,5 +1,6 @@
 import { Appointment } from '../appointments/appointment.entity';
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToOne, JoinColumn } from 'typeorm';
+import { User } from '../users/user.entity';
 
 @Entity('patients')
 export class Patient {
@@ -12,5 +13,7 @@ export class Patient {
   @Column({ nullable: true })
   contact: string;
 
-  // Add other fields as needed
+  @OneToOne(() => User)
+  @JoinColumn({ name: 'user_id' }) 
+  user: User;
 }

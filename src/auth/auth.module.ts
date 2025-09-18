@@ -7,10 +7,11 @@ import { GoogleStrategy } from './google.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './jwt.strategy';
+import { Patient } from '../patients/patient.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User ,Patient]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
