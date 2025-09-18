@@ -21,6 +21,8 @@ import { SchedulesModule } from './schedules/schedules.module';
       database: process.env.DB_DATABASE,
       autoLoadEntities: true, // Automatically load all entities
       synchronize: false, // DEV only: auto-creates schema. We'll replace this with migrations.
+      logging: true,
+      logger: 'advanced-console',
     }),
      DoctorsModule,
      SchedulesModule,

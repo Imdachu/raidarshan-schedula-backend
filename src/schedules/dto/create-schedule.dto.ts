@@ -1,5 +1,6 @@
 import {IsArray,  IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional,IsString, Min , ValidateIf} from 'class-validator';
 import { WaveMode , Weekday} from '../schedule.entity';
+import { Transform } from 'class-transformer';
 
 export class CreateScheduleDto {
   @IsDateString()
@@ -12,6 +13,10 @@ export class CreateScheduleDto {
   @IsEnum(Weekday, { each: true }) // This validates every item in the array against the Weekday enum
   @IsNotEmpty()
   @ValidateIf(o => !o.date)
+  @Transform(({ value }) =>
+    Array.isArray(value) ? value.map(v => v.toLowerCase()) : value
+  )
+
   weekdays?: Weekday[];
 
   @IsString()
