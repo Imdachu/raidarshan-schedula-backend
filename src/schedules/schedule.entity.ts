@@ -1,5 +1,5 @@
 import { Doctor } from '../doctors/doctor.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, Check } from 'typeorm';
 
 export enum WaveMode {
   SYSTEM = 'system',
@@ -17,6 +17,8 @@ export enum Weekday {
 }
 
 @Entity('doctor_schedules')
+@Check(`"date" IS NOT NULL OR "weekdays" IS NOT NULL`)
+@Check(`"date" IS NULL OR "weekdays" IS NULL`)
 export class DoctorSchedule {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -25,11 +27,16 @@ export class DoctorSchedule {
   @JoinColumn({ name: 'doctor_id' })
   doctor: Doctor;
 
-  @Column({ type: 'date' })
+  @Column({ type: 'date', nullable: true })
   date: string;
 
-  @Column({ type: 'enum', enum: Weekday, nullable: true })
-  weekday: Weekday;
+  @Column({
+    type: 'enum',
+    enum: Weekday,
+    array: true, // This tells PostgreSQL to store it as an array of enums
+    nullable: true,
+  })
+  weekdays: Weekday[]; // Now it's an array of Weekday enums
 
   @Column({ type: 'enum', enum: WaveMode, nullable: true })
   wave_mode: WaveMode;
