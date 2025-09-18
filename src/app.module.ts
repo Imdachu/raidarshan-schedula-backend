@@ -39,6 +39,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
         User,
       ],
       synchronize: false, // DEV only: auto-creates schema. We'll replace this with migrations.
+      
     }),
      DoctorsModule,
      SchedulesModule,
