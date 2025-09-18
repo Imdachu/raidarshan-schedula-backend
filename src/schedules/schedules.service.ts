@@ -142,7 +142,7 @@ export class SchedulesService {
           });
           const available = capacity_per_slot - bookedCount;
           slots.push({
-            slotId: `d${doctorId}-${scheduleId}-${date.replace(/-/g, '')}-${startTimeString.replace(':', '')}`,
+            slotId: `${doctorId}-${date.replace(/-/g, '')}-${startTimeString.replace(':', '')}`,
             startTime: startTimeString,
             endTime: endTimeString,
             capacity: capacity_per_slot,
