@@ -28,23 +28,17 @@ export class AppointmentsService {
     userId: string,
     confirmAppointmentDto: ConfirmAppointmentDto,
   ): Promise<Appointment> {
-    const { slotId } = confirmAppointmentDto;
 
-    const timeString = slotId.substring(slotId.lastIndexOf('-') + 1);
-    const dateString = slotId.substring(
-      slotId.lastIndexOf('-', slotId.lastIndexOf('-') - 1) + 1,
-      slotId.lastIndexOf('-'),
-    );
-    const doctorIdWithPrefix = slotId.substring(
-      0,
-      slotId.lastIndexOf('-', slotId.lastIndexOf('-') - 1),
-    );
-    
-    if (!timeString || !dateString || !doctorIdWithPrefix.startsWith('d')) {
+    const { slotId } = confirmAppointmentDto;
+    // slotId: <doctorId>-<dateYYYYMMDD>-<startTimeHHMM>
+    // UUID is always 36 chars
+    const uuidLength = 36;
+    const doctorId = slotId.substring(0, uuidLength);
+    const dateString = slotId.substring(uuidLength + 1, uuidLength + 1 + 8);
+    const timeString = slotId.substring(uuidLength + 1 + 8 + 1);
+    if (!doctorId || !dateString || !timeString) {
       throw new Error('Invalid slotId format');
     }
-    
-    const doctorId = doctorIdWithPrefix.substring(1); // Remove the 'd' prefix
     const date = `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
     const assigned_time = `${timeString.substring(0, 2)}:${timeString.substring(2, 4)}`;
 
@@ -67,7 +61,6 @@ export class AppointmentsService {
       if (!doctor) {
         throw new NotFoundException('Doctor not found');
       }
-
 
       const schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
         where: { doctor: { id: doctorId }, date },
@@ -93,7 +86,12 @@ export class AppointmentsService {
         assigned_time,
       });
 
-      return transactionalEntityManager.save(newAppointment);
+      const savedAppointment = await transactionalEntityManager.save(newAppointment);
+      // Add assigned_date to the response
+      return {
+        ...savedAppointment,
+        assigned_date: date,
+      };
     });
   }
 }

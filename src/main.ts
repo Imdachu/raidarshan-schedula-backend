@@ -9,7 +9,7 @@ async function bootstrap() {
     new ValidationPipe({
       transform: true, // allows @Transform decorators in DTOs to work
       whitelist: true, // optional: strips properties not in DTO
-      forbidNonWhitelisted: true, // optional: throws error if extra properties are sent
+      forbidNonWhitelisted: false, // optional: throws error if extra properties are sent
     }),
   );
   await app.listen(3000);
