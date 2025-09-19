@@ -1,3 +1,4 @@
+import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { RegisterPatientDto } from './dto/register-patient.dto';
 import { ConflictException } from '@nestjs/common';
@@ -13,6 +14,33 @@ import { Patient } from '../patients/patient.entity';
 
 @Injectable()
 export class AuthService {
+
+  public async login(loginDto: LoginDto) {
+    const { email, password } = loginDto;
+    // 1. Find user by email
+    const user = await this.userRepository.findOne({ where: { email } });
+    if (!user) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    // 2. Check if verified
+    if (!user.is_verified) {
+      throw new UnauthorizedException('Please verify your OTP before logging in');
+    }
+    // 3. Check password
+    if (!user.password_hash) {
+      throw new UnauthorizedException('No password set for this account');
+    }
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
+    if (!passwordMatch) {
+      throw new UnauthorizedException('Invalid email or password');
+    }
+    // 4. Build JWT payload
+    const payload = { email: user.email, sub: user.id, role: user.role };
+    return {
+      message: 'Login successful',
+      token: this.jwtService.sign(payload),
+    };
+  }
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,

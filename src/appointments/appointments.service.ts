@@ -1,9 +1,9 @@
-import { UnauthorizedException, BadRequestException } from '@nestjs/common';
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { Appointment, AppointmentStatus } from './appointment.entity';
 import { ConfirmAppointmentDto } from './dto/confirm-appointment.dto';
+import { AppointmentListStatus } from './dto/get-appointments.dto';
 import { Doctor } from '../doctors/doctor.entity';
 import { Patient } from '../patients/patient.entity';
 import { DoctorSchedule } from '../schedules/schedule.entity';
@@ -12,6 +12,38 @@ import { Equal } from 'typeorm';
 
 @Injectable()
 export class AppointmentsService {
+
+  async findAllForPatient(userId: string, status?: AppointmentListStatus) {
+    // 1. Find the patient profile for this user
+    const patient = await this.patientRepository.findOne({ where: { user: { id: userId } } });
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found for the logged-in user');
+    }
+
+    // 2. Build base query for this patient
+    const qb = this.appointmentRepository.createQueryBuilder('appointment')
+      .leftJoinAndSelect('appointment.doctor', 'doctor')
+      .leftJoinAndSelect('appointment.patient', 'patient')
+      .where('appointment.patient = :patientId', { patientId: patient.id });
+
+    const now = new Date();
+
+    if (status === AppointmentListStatus.UPCOMING) {
+      // Upcoming: CONFIRMED and assigned_time in the future
+      qb.andWhere('appointment.status = :confirmed', { confirmed: AppointmentStatus.CONFIRMED })
+        .andWhere('appointment.created_at > :now', { now });
+    } else if (status === AppointmentListStatus.PAST) {
+      // Past: COMPLETED, or CONFIRMED but assigned_time in the past
+      qb.andWhere(
+        '(appointment.status = :completed OR (appointment.status = :confirmed AND appointment.created_at <= :now))',
+        { completed: AppointmentStatus.COMPLETED, confirmed: AppointmentStatus.CONFIRMED, now }
+      );
+    } else if (status === AppointmentListStatus.CANCELLED) {
+      qb.andWhere('appointment.status = :cancelled', { cancelled: AppointmentStatus.CANCELLED });
+    }
+
+    return qb.orderBy('appointment.created_at', 'DESC').getMany();
+  }
   async cancelByPatient(appointmentId: string, userId: string) {
     // 1. Find the patient profile for this user
     const patient = await this.patientRepository.findOne({ where: { user: { id: userId } } });

@@ -1,3 +1,6 @@
+
+import { LoginDto } from './dto/login.dto';
+
 import { Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
@@ -12,6 +15,10 @@ import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
+  @Post('login')
+  async login(@Body(ValidationPipe) loginDto: LoginDto) {
+    return this.authService.login(loginDto);
+  }
   constructor(private readonly authService: AuthService) {}
 
   @Get('google')

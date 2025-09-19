@@ -1,4 +1,5 @@
-import { Body, Controller, Post, Request, UseGuards, ValidationPipe, Get, Param, NotFoundException, Patch } from '@nestjs/common';
+import { Body, Controller, Post, Request, UseGuards, ValidationPipe, Get, Param, NotFoundException, Patch, Query } from '@nestjs/common';
+import { GetAppointmentsDto, AppointmentListStatus } from './dto/get-appointments.dto';
 import { AppointmentsService } from './appointments.service';
 import { ConfirmAppointmentDto } from './dto/confirm-appointment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -7,6 +8,16 @@ import { Appointment } from './appointment.entity';
 @Controller('api/v1/appointments')
 export class AppointmentsController {
   constructor(private readonly appointmentsService: AppointmentsService) {}
+
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async listAppointments(
+    @Request() req,
+    @Query(ValidationPipe) query: GetAppointmentsDto,
+  ) {
+    const userId = req.user.userId;
+    return this.appointmentsService.findAllForPatient(userId, query.status);
+  }
 
   @Post('confirm')
   @UseGuards(JwtAuthGuard)
