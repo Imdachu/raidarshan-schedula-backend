@@ -1,7 +1,7 @@
 import { Doctor } from '../doctors/doctor.entity';
 import { Patient } from '../patients/patient.entity';
 import { Slot } from '../slots/slot.entity';
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export enum AppointmentStatus {
   CONFIRMED = 'confirmed',
@@ -35,4 +35,10 @@ export class Appointment {
     default: AppointmentStatus.CONFIRMED,
   })
   status: AppointmentStatus;
+
+  @CreateDateColumn({ name: 'created_at' })
+  created_at: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updated_at: Date;
 }
