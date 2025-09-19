@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Request, UseGuards, ValidationPipe, Get, Param, NotFoundException } from '@nestjs/common';
+import { Body, Controller, Post, Request, UseGuards, ValidationPipe, Get, Param, NotFoundException, Patch } from '@nestjs/common';
 import { AppointmentsService } from './appointments.service';
 import { ConfirmAppointmentDto } from './dto/confirm-appointment.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -28,5 +28,15 @@ export class AppointmentsController {
       throw new NotFoundException('Appointment not found');
     }
     return appointment;
+  }
+
+  @Patch(':id/cancel')
+  @UseGuards(JwtAuthGuard)
+  async cancelAppointment(
+    @Param('id') appointmentId: string,
+    @Request() req,
+  ) {
+    const userId = req.user.userId;
+    return this.appointmentsService.cancelByPatient(appointmentId, userId);
   }
 }

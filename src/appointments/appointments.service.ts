@@ -1,7 +1,8 @@
+import { UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
-import { Appointment } from './appointment.entity';
+import { Appointment, AppointmentStatus } from './appointment.entity';
 import { ConfirmAppointmentDto } from './dto/confirm-appointment.dto';
 import { Doctor } from '../doctors/doctor.entity';
 import { Patient } from '../patients/patient.entity';
@@ -11,6 +12,37 @@ import { Equal } from 'typeorm';
 
 @Injectable()
 export class AppointmentsService {
+  async cancelByPatient(appointmentId: string, userId: string) {
+    // 1. Find the patient profile for this user
+    const patient = await this.patientRepository.findOne({ where: { user: { id: userId } } });
+    if (!patient) {
+      throw new NotFoundException('Patient profile not found for the logged-in user');
+    }
+
+    // 2. Find the appointment and load patient relation
+    const appointment = await this.appointmentRepository.findOne({
+      where: { id: appointmentId },
+      relations: ['patient'],
+    });
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+
+    // 3. Security: Only the owner patient can cancel
+    if (!appointment.patient || appointment.patient.id !== patient.id) {
+      throw new UnauthorizedException('You are not authorized to cancel this appointment');
+    }
+
+    // 4. Business logic: Only CONFIRMED can be cancelled
+    if (appointment.status !== AppointmentStatus.CONFIRMED) {
+      throw new BadRequestException('Only confirmed appointments can be cancelled');
+    }
+
+    // 5. Update status and save
+    appointment.status = AppointmentStatus.CANCELLED;
+    await this.appointmentRepository.save(appointment);
+    return appointment;
+  }
   async create(
     userId: string,
     confirmAppointmentDto: ConfirmAppointmentDto,
