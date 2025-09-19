@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from "typeorm";
 
-export class AddUserRelationToPatient1758175965489 implements MigrationInterface {
-    name = 'AddUserRelationToPatient1758175965489'
+export class AddUserIdToPatient1758264281499 implements MigrationInterface {
+    name = 'AddUserIdToPatient1758264281499'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         await queryRunner.query(`ALTER TABLE "patients" ADD "user_id" uuid`);
