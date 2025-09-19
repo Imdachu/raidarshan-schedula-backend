@@ -22,6 +22,12 @@ export class SeederService {
     const doctors = [
       { name: 'Dr. Sharma', specialization: 'Cardiology', location: 'Bangalore', schedule_type: ScheduleType.WAVE },
       { name: 'Dr. Nair', specialization: 'Dermatology', location: 'Bangalore', schedule_type: ScheduleType.STREAM },
+      { 
+    name: 'Dr. Rao', 
+    specialization: 'Neurology', 
+    location: 'Mumbai', 
+    schedule_type: ScheduleType.WAVE
+  },
     ];
     await this.doctorRepository.save(doctors);
 
