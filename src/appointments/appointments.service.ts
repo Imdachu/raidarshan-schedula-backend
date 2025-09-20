@@ -6,7 +6,7 @@ import { ConfirmAppointmentDto } from './dto/confirm-appointment.dto';
 import { AppointmentListStatus } from './dto/get-appointments.dto';
 import { Doctor } from '../doctors/doctor.entity';
 import { Patient } from '../patients/patient.entity';
-import { DoctorSchedule } from '../schedules/schedule.entity';
+import { DoctorSchedule, WaveMode } from '../schedules/schedule.entity';
 import { Equal } from 'typeorm';
 
 
@@ -97,9 +97,7 @@ export class AppointmentsService {
       where: { user: { id: userId } },
     });
     if (!patient) {
-      throw new NotFoundException(
-        'Patient profile not found for the logged-in user',
-      );
+      throw new NotFoundException('Patient profile not found for the logged-in user');
     }
     // Use a transaction to ensure data consistency
     return this.dataSource.transaction(async (transactionalEntityManager) => {
@@ -114,7 +112,6 @@ export class AppointmentsService {
       let schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
         where: { doctor: { id: doctorId }, date },
       });
-
       // If not found, try to find a recurring schedule for the weekday
       if (!schedule) {
         const weekday = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
@@ -125,28 +122,49 @@ export class AppointmentsService {
           .getOne();
       }
 
-      if (!schedule || !schedule.capacity_per_slot) {
-        throw new NotFoundException(
-          'Schedule not found for this doctor on this date',
-        );
+      // Branch: If schedule is manual (wave_mode === WaveMode.DOCTOR), use Slot entity for capacity
+      if (schedule && schedule.wave_mode === WaveMode.DOCTOR) {
+        // Find the slot by slot_id_composite using Slot entity
+        const slotRepo = transactionalEntityManager.getRepository('Slot');
+        const slot = await slotRepo.findOne({ where: { slot_id_composite: slotId } });
+        if (!slot) {
+          throw new NotFoundException('Manual slot not found for this slotId');
+        }
+        if (slot.booked_count >= slot.capacity) {
+          throw new ConflictException('This manual slot is already full');
+        }
+        // Book the appointment
+        const newAppointment = transactionalEntityManager.create(Appointment, {
+          doctor,
+          patient,
+          assigned_time,
+        });
+        // Increment booked_count for the slot
+        slot.booked_count += 1;
+        await slotRepo.save(slot);
+        const savedAppointment = await transactionalEntityManager.save(newAppointment);
+        return {
+          ...savedAppointment,
+          assigned_date: date,
+        };
       }
 
+      // SYSTEM slot logic (as before)
+      if (!schedule || !schedule.capacity_per_slot) {
+        throw new NotFoundException('Schedule not found for this doctor on this date');
+      }
       const bookedCount = await transactionalEntityManager.count(Appointment, {
         where: { doctor: { id: doctorId }, assigned_time },
       });
-
       if (bookedCount >= schedule.capacity_per_slot) {
         throw new ConflictException('This time slot is already full');
       }
-
       const newAppointment = transactionalEntityManager.create(Appointment, {
         doctor,
         patient,
         assigned_time,
       });
-
       const savedAppointment = await transactionalEntityManager.save(newAppointment);
-      // Add assigned_date to the response
       return {
         ...savedAppointment,
         assigned_date: date,
