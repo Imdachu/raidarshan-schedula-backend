@@ -26,23 +26,31 @@ export class AppointmentsService {
       .leftJoinAndSelect('appointment.patient', 'patient')
       .where('appointment.patient = :patientId', { patientId: patient.id });
 
+    // Use assigned_date and assigned_time for filtering
+    // We assume assigned_date is returned from the DB as a string (YYYY-MM-DD)
+    // and assigned_time as string (HH:mm)
     const now = new Date();
+    const nowDate = now.toISOString().slice(0, 10); // YYYY-MM-DD
+    const nowTime = now.toTimeString().slice(0, 5); // HH:mm
 
     if (status === AppointmentListStatus.UPCOMING) {
-      // Upcoming: CONFIRMED and assigned_time in the future
+      // Upcoming: CONFIRMED and scheduled for the future
       qb.andWhere('appointment.status = :confirmed', { confirmed: AppointmentStatus.CONFIRMED })
-        .andWhere('appointment.created_at > :now', { now });
+        .andWhere(
+          '(appointment.assigned_date > :nowDate OR (appointment.assigned_date = :nowDate AND appointment.assigned_time > :nowTime))',
+          { nowDate, nowTime }
+        );
     } else if (status === AppointmentListStatus.PAST) {
-      // Past: COMPLETED, or CONFIRMED but assigned_time in the past
+      // Past: COMPLETED, or CONFIRMED but scheduled in the past
       qb.andWhere(
-        '(appointment.status = :completed OR (appointment.status = :confirmed AND appointment.created_at <= :now))',
-        { completed: AppointmentStatus.COMPLETED, confirmed: AppointmentStatus.CONFIRMED, now }
+        '(appointment.status = :completed OR (appointment.status = :confirmed AND (appointment.assigned_date < :nowDate OR (appointment.assigned_date = :nowDate AND appointment.assigned_time <= :nowTime))))',
+        { completed: AppointmentStatus.COMPLETED, confirmed: AppointmentStatus.CONFIRMED, nowDate, nowTime }
       );
     } else if (status === AppointmentListStatus.CANCELLED) {
       qb.andWhere('appointment.status = :cancelled', { cancelled: AppointmentStatus.CANCELLED });
     }
 
-    return qb.orderBy('appointment.created_at', 'DESC').getMany();
+    return qb.orderBy('appointment.assigned_date', 'DESC').addOrderBy('appointment.assigned_time', 'DESC').getMany();
   }
   async cancelByPatient(appointmentId: string, userId: string) {
     // 1. Find the patient profile for this user
