@@ -31,7 +31,10 @@ export class SlotsService {
 
     // Prevent overlapping slots
     const newSlots = dto.slots.map(slotDto => {
-      const slot_id_composite = `${doctorId}-${dto.date}-${slotDto.startTime}`;
+      const dateStr = dto.date.replace(/-/g, ''); // '2025-09-25' -> '20250925'
+      // Only take HHmm from startTime (e.g., '14:00:00' -> '1400')
+      const timeStr = slotDto.startTime.replace(':', '').substring(0, 4);
+      const slot_id_composite = `${doctorId}-${dateStr}-${timeStr}`;
       const slot = this.slotRepository.create({
         start_time: slotDto.startTime,
         end_time: slotDto.endTime,

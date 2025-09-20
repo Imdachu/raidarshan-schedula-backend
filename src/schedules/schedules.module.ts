@@ -5,9 +5,10 @@ import { SchedulesController } from './schedules.controller';
 import { SchedulesService } from './schedules.service';
 import { Doctor } from '../doctors/doctor.entity';
 import { Appointment } from '../appointments/appointment.entity';
+import { Slot } from '../slots/slot.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([DoctorSchedule, Doctor, Appointment])],
+  imports: [TypeOrmModule.forFeature([DoctorSchedule, Doctor, Appointment, Slot])],
   controllers: [SchedulesController],
   providers: [SchedulesService],
   exports: [SchedulesService],

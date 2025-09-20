@@ -7,10 +7,11 @@ function padTimeString(time: string): string {
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { DoctorSchedule } from './schedule.entity';
+import { DoctorSchedule, WaveMode } from './schedule.entity';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { Doctor } from '../doctors/doctor.entity';
 import { Appointment } from '../appointments/appointment.entity';
+import { Slot } from '../slots/slot.entity';
 
 @Injectable()
 export class SchedulesService {
@@ -19,8 +20,10 @@ export class SchedulesService {
     private readonly scheduleRepository: Repository<DoctorSchedule>,
     @InjectRepository(Doctor)
     private readonly doctorRepository: Repository<Doctor>,
-    @InjectRepository(Appointment) // <-- 2. Inject Appointment Repository
+    @InjectRepository(Appointment)
     private readonly appointmentRepository: Repository<Appointment>,
+    @InjectRepository(Slot)
+    private readonly slotRepository: Repository<Slot>,
   ) {}
 
   async create(
@@ -122,36 +125,50 @@ export class SchedulesService {
     // 2. Generate slots for each schedule
     const slots = [];
     for (const schedule of allSchedules) {
-      const { consulting_start, consulting_end, slot_duration, capacity_per_slot, id: scheduleId, wave_mode } = schedule;
-      let currentTime = new Date(`${date}T${consulting_start}`);
-      const endTime = new Date(`${date}T${consulting_end}`);
-      while (currentTime < endTime) {
-        const slotStartTime = currentTime;
-        const slotEndTime = new Date(slotStartTime.getTime() + slot_duration * 60000);
-        // Only add slot if it fits completely within consulting_end
-        if (slotEndTime <= endTime) {
-          const startTimeString = slotStartTime.toTimeString().substring(0, 5);
-          const endTimeString = slotEndTime.toTimeString().substring(0, 5);
-          // Count existing appointments for this slot
-          const bookedCount = await this.appointmentRepository.count({
-            where: {
-              doctor: { id: doctorId },
-              assigned_time: startTimeString,
-              // Add date check if needed
-            },
-          });
-          const available = capacity_per_slot - bookedCount;
+      if (schedule.wave_mode === WaveMode.DOCTOR) {
+        // Fetch manual slots from DB
+        const dbSlots = await this.slotRepository.find({ where: { schedule: { id: schedule.id } } });
+        for (const slot of dbSlots) {
           slots.push({
-            slotId: `${doctorId}-${date.replace(/-/g, '')}-${startTimeString.replace(':', '')}`,
-            startTime: startTimeString,
-            endTime: endTimeString,
-            capacity: capacity_per_slot,
-            available: available > 0 ? available : 0,
+            slotId: slot.slot_id_composite,
+            startTime: slot.start_time,
+            endTime: slot.end_time,
+            capacity: slot.capacity,
+            available: Math.max(slot.capacity - slot.booked_count, 0),
             scheduleType: schedule.date ? 'one-off' : 'recurring',
-            waveMode: wave_mode,
+            waveMode: schedule.wave_mode,
           });
         }
-        currentTime = slotEndTime;
+      } else {
+        // SYSTEM: auto-generate slots as before
+        const { consulting_start, consulting_end, slot_duration, capacity_per_slot } = schedule;
+        let currentTime = new Date(`${date}T${consulting_start}`);
+        const endTime = new Date(`${date}T${consulting_end}`);
+        while (currentTime < endTime) {
+          const slotStartTime = currentTime;
+          const slotEndTime = new Date(slotStartTime.getTime() + slot_duration * 60000);
+          if (slotEndTime <= endTime) {
+            const startTimeString = slotStartTime.toTimeString().substring(0, 5);
+            const endTimeString = slotEndTime.toTimeString().substring(0, 5);
+            const bookedCount = await this.appointmentRepository.count({
+              where: {
+                doctor: { id: doctorId },
+                assigned_time: startTimeString,
+              },
+            });
+            const available = capacity_per_slot - bookedCount;
+            slots.push({
+              slotId: `${doctorId}-${date.replace(/-/g, '')}-${startTimeString.replace(':', '')}`,
+              startTime: startTimeString,
+              endTime: endTimeString,
+              capacity: capacity_per_slot,
+              available: available > 0 ? available : 0,
+              scheduleType: schedule.date ? 'one-off' : 'recurring',
+              waveMode: schedule.wave_mode,
+            });
+          }
+          currentTime = slotEndTime;
+        }
       }
     }
     // 3. Return all slots combined

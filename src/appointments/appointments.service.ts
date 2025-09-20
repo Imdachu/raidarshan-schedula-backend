@@ -110,9 +110,20 @@ export class AppointmentsService {
         throw new NotFoundException('Doctor not found');
       }
 
-      const schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
+      // Try to find a schedule for this doctor and date
+      let schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
         where: { doctor: { id: doctorId }, date },
       });
+
+      // If not found, try to find a recurring schedule for the weekday
+      if (!schedule) {
+        const weekday = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        schedule = await transactionalEntityManager.createQueryBuilder(DoctorSchedule, 'schedule')
+          .leftJoin('schedule.doctor', 'doctor')
+          .where('doctor.id = :doctorId', { doctorId })
+          .andWhere(':weekday = ANY(schedule.weekdays)', { weekday })
+          .getOne();
+      }
 
       if (!schedule || !schedule.capacity_per_slot) {
         throw new NotFoundException(
