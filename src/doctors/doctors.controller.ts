@@ -23,6 +23,6 @@ export class DoctorsController {
     @Param('id') doctorId: string,
     @Query(new ValidationPipe({ transform: true })) getSlotsDto: GetSlotsDto,
   ) {
-    return this.schedulesService.findAvailableSlots(doctorId, getSlotsDto.date);
+  return this.schedulesService.findAvailableSlots(doctorId, getSlotsDto.date);
   }
 }

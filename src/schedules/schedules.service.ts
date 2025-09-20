@@ -91,7 +91,8 @@ export class SchedulesService {
       consulting_end: createScheduleDto.consultingEnd,       
       wave_mode: createScheduleDto.waveMode,
       slot_duration: createScheduleDto.slotDuration,         
-      capacity_per_slot: createScheduleDto.capacityPerSlot,   
+      capacity_per_slot: createScheduleDto.capacityPerSlot,
+      total_capacity: createScheduleDto.totalCapacity, // <-- map DTO to entity
     });
 
     return this.scheduleRepository.save(newSchedule);
@@ -125,7 +126,27 @@ export class SchedulesService {
     // 2. Generate slots for each schedule
     const slots = [];
     for (const schedule of allSchedules) {
-      if (schedule.wave_mode === WaveMode.DOCTOR) {
+      // STREAM MODE
+      if (schedule.total_capacity && (!schedule.wave_mode || schedule.wave_mode === null)) {
+        // Count all appointments for this doctor, date, and schedule
+        const bookedCount = await this.appointmentRepository.count({
+          where: {
+            doctor: { id: doctorId },
+            assigned_date: date,
+            // Optionally: schedule: { id: schedule.id } // if you link appointments to schedule
+          },
+        });
+        slots.push({
+          slotId: `stream-${schedule.id}`,
+          startTime: schedule.consulting_start,
+          endTime: schedule.consulting_end,
+          capacity: schedule.total_capacity,
+          available: Math.max(schedule.total_capacity - bookedCount, 0),
+          scheduleType: 'stream',
+        });
+      }
+      // WAVE MODES
+      else if (schedule.wave_mode === WaveMode.DOCTOR) {
         // Fetch manual slots from DB
         const dbSlots = await this.slotRepository.find({ where: { schedule: { id: schedule.id } } });
         for (const slot of dbSlots) {

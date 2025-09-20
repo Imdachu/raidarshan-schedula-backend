@@ -1,5 +1,6 @@
-import {IsArray,  IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional,IsString, Min , ValidateIf} from 'class-validator';
-import { WaveMode , Weekday} from '../schedule.entity';
+import { IsArray, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min, ValidateIf } from 'class-validator';
+import { WaveMode, Weekday } from '../schedule.entity';
+import { ScheduleType } from '../../doctors/doctor.entity';
 import { Transform } from 'class-transformer';
 
 export class CreateScheduleDto {
@@ -7,6 +8,11 @@ export class CreateScheduleDto {
   @IsNotEmpty()
   @ValidateIf(o => !o.weekdays)
   date: string;
+
+  @IsEnum(ScheduleType)
+  @IsNotEmpty()
+  scheduleType: ScheduleType; // 'wave' or 'stream'
+
 
 
   @IsArray()
@@ -27,15 +33,23 @@ export class CreateScheduleDto {
   @IsNotEmpty()
   consultingEnd: string; // e.g., "17:00:00"
 
+  @ValidateIf(o => o.scheduleType === ScheduleType.WAVE)
   @IsEnum(WaveMode)
   @IsNotEmpty()
-  waveMode: WaveMode;
+  waveMode?: WaveMode;
 
+  @ValidateIf(o => o.scheduleType === ScheduleType.WAVE)
   @IsInt()
   @Min(1)
   slotDuration: number; // in minutes
 
+  @ValidateIf(o => o.scheduleType === ScheduleType.WAVE)
   @IsInt()
   @Min(1)
   capacityPerSlot: number;
+
+  @ValidateIf(o => o.scheduleType === ScheduleType.STREAM)
+  @IsInt()
+  @Min(1)
+  totalCapacity?: number;
 }
