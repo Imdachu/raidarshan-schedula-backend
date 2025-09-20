@@ -26,6 +26,10 @@ export class Appointment {
   @JoinColumn({ name: 'slot_id' })
   slot: Slot;
 
+
+  @Column({ type: 'date', nullable: false })
+  assigned_date: string;
+
   @Column({ type: 'time', nullable: true })
   assigned_time: string;
 
