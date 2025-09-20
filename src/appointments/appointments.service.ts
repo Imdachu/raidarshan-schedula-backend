@@ -241,4 +241,13 @@ export class AppointmentsService {
       updated_at: appointment.updated_at,
     };
   }
+    async markAsCompleted(appointmentId: string): Promise<Appointment> {
+    const appointment = await this.appointmentRepository.findOne({ where: { id: appointmentId } });
+    if (!appointment) {
+      throw new NotFoundException('Appointment not found');
+    }
+    appointment.status = AppointmentStatus.COMPLETED;
+    await this.appointmentRepository.save(appointment);
+    return appointment;
+  }
 }

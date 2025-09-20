@@ -1,3 +1,7 @@
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
+import { UserRole } from '../users/user.entity';
+  
 import { Body, Controller, Post, Request, UseGuards, ValidationPipe, Get, Param, NotFoundException, Patch, Query } from '@nestjs/common';
 import { GetAppointmentsDto, AppointmentListStatus } from './dto/get-appointments.dto';
 import { AppointmentsService } from './appointments.service';
@@ -49,5 +53,16 @@ export class AppointmentsController {
   ) {
     const userId = req.user.userId;
     return this.appointmentsService.cancelByPatient(appointmentId, userId);
+  }
+
+  @Patch(':id/complete')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DOCTOR, UserRole.ADMIN)
+  async completeAppointment(
+    @Param('id') appointmentId: string,
+    @Request() req,
+  ) {
+    // Optionally, you can check if the doctor is assigned to this appointment
+    return this.appointmentsService.markAsCompleted(appointmentId);
   }
 }
