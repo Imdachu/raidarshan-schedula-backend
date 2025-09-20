@@ -12,6 +12,7 @@ import { DoctorSchedule } from './schedules/schedule.entity';
 import { Slot } from './slots/slot.entity';
 import { User } from './users/user.entity';
 import { AppointmentsModule } from './appointments/appointments.module'; 
+import { SlotsModule } from './slots/slots.module';
 
 @Module({
   imports: [
@@ -19,7 +20,7 @@ import { AppointmentsModule } from './appointments/appointments.module';
     DoctorsModule,
     SchedulesModule,
     AppointmentsModule,
-    ConfigModule.forRoot({
+  ConfigModule.forRoot({
       isGlobal: true, // Makes the config available application-wide
     }),
     TypeOrmModule.forRoot({
@@ -41,8 +42,9 @@ import { AppointmentsModule } from './appointments/appointments.module';
       synchronize: false, // DEV only: auto-creates schema. We'll replace this with migrations.
       
     }),
-     DoctorsModule,
-     SchedulesModule,
+  SlotsModule,
+  DoctorsModule,
+  SchedulesModule,
   ],
  controllers: [HelloController],
   providers: [],
