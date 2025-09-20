@@ -87,19 +87,7 @@ export class AppointmentsService {
     userId: string,
     confirmAppointmentDto: ConfirmAppointmentDto,
   ): Promise<Appointment> {
-    const { slotId } = confirmAppointmentDto;
-    // slotId: <doctorId>-<dateYYYYMMDD>-<startTimeHHMM>
-    // UUID is always 36 chars
-    const uuidLength = 36;
-    const doctorId = slotId.substring(0, uuidLength);
-    const dateString = slotId.substring(uuidLength + 1, uuidLength + 1 + 8);
-    const timeString = slotId.substring(uuidLength + 1 + 8 + 1);
-    if (!doctorId || !dateString || !timeString) {
-      throw new Error('Invalid slotId format');
-    }
-    const date = `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
-    const assigned_time = `${timeString.substring(0, 2)}:${timeString.substring(2, 4)}`;
-
+    // --- Stream and Wave Booking Logic ---
     // Find patient profile linked to the logged-in user
     const patient = await this.patientRepository.findOne({
       where: { user: { id: userId } },
@@ -107,67 +95,117 @@ export class AppointmentsService {
     if (!patient) {
       throw new NotFoundException('Patient profile not found for the logged-in user');
     }
-    // Use a transaction to ensure data consistency
+
     return this.dataSource.transaction(async (transactionalEntityManager) => {
-      const doctor = await transactionalEntityManager.findOne(Doctor, {
-        where: { id: doctorId },
-      });
-      if (!doctor) {
-        throw new NotFoundException('Doctor not found');
-      }
-
-      // Try to find a schedule for this doctor and date
-      let schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
-        where: { doctor: { id: doctorId }, date },
-      });
-      // If not found, try to find a recurring schedule for the weekday
-      if (!schedule) {
-        const weekday = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-        schedule = await transactionalEntityManager.createQueryBuilder(DoctorSchedule, 'schedule')
-          .leftJoin('schedule.doctor', 'doctor')
-          .where('doctor.id = :doctorId', { doctorId })
-          .andWhere(':weekday = ANY(schedule.weekdays)', { weekday })
-          .getOne();
-      }
-
-      // Branch: If schedule is manual (wave_mode === WaveMode.DOCTOR), use Slot entity for capacity
-      if (schedule && schedule.wave_mode === WaveMode.DOCTOR) {
-        // Find the slot by slot_id_composite using Slot entity
-        const slotRepo = transactionalEntityManager.getRepository('Slot');
-        const slot = await slotRepo.findOne({ where: { slot_id_composite: slotId } });
-        if (!slot) {
-          throw new NotFoundException('Manual slot not found for this slotId');
+      // WAVE BOOKING (slotId present)
+      if (confirmAppointmentDto.slotId) {
+        const slotId = confirmAppointmentDto.slotId;
+        // slotId: <doctorId>-<dateYYYYMMDD>-<startTimeHHMM>
+        const uuidLength = 36;
+        const doctorId = slotId.substring(0, uuidLength);
+        const dateString = slotId.substring(uuidLength + 1, uuidLength + 1 + 8);
+        const timeString = slotId.substring(uuidLength + 1 + 8 + 1);
+        if (!doctorId || !dateString || !timeString) {
+          throw new Error('Invalid slotId format');
         }
-        if (slot.booked_count >= slot.capacity) {
-          throw new ConflictException('This manual slot is already full');
+        const date = `${dateString.substring(0, 4)}-${dateString.substring(4, 6)}-${dateString.substring(6, 8)}`;
+        const assigned_time = `${timeString.substring(0, 2)}:${timeString.substring(2, 4)}`;
+
+        const doctor = await transactionalEntityManager.findOne(Doctor, { where: { id: doctorId } });
+        if (!doctor) throw new NotFoundException('Doctor not found');
+
+        // Try to find a schedule for this doctor and date
+        let schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
+          where: { doctor: { id: doctorId }, date },
+        });
+        // If not found, try to find a recurring schedule for the weekday
+        if (!schedule) {
+          const weekday = new Date(date).toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+          schedule = await transactionalEntityManager.createQueryBuilder(DoctorSchedule, 'schedule')
+            .leftJoin('schedule.doctor', 'doctor')
+            .where('doctor.id = :doctorId', { doctorId })
+            .andWhere(':weekday = ANY(schedule.weekdays)', { weekday })
+            .getOne();
         }
-        // Book the appointment
+
+        // Branch: If schedule is manual (wave_mode === WaveMode.DOCTOR), use Slot entity for capacity
+        if (schedule && schedule.wave_mode === WaveMode.DOCTOR) {
+          const slotRepo = transactionalEntityManager.getRepository('Slot');
+          const slot = await slotRepo.findOne({ where: { slot_id_composite: slotId } });
+          if (!slot) throw new NotFoundException('Manual slot not found for this slotId');
+          if (slot.booked_count >= slot.capacity) throw new ConflictException('This manual slot is already full');
+          // Book the appointment
+          const newAppointment = transactionalEntityManager.create(Appointment, {
+            doctor,
+            patient,
+            assigned_time,
+            assigned_date: date,
+          });
+          slot.booked_count += 1;
+          await slotRepo.save(slot);
+          const savedAppointment = await transactionalEntityManager.save(newAppointment);
+          return { ...savedAppointment, assigned_date: date };
+        }
+
+        // SYSTEM slot logic (as before)
+        if (!schedule || !schedule.capacity_per_slot) {
+          throw new NotFoundException('Schedule not found for this doctor on this date');
+        }
+        const bookedCount = await transactionalEntityManager.count(Appointment, {
+          where: { doctor: { id: doctorId }, assigned_time },
+        });
+        if (bookedCount >= schedule.capacity_per_slot) {
+          throw new ConflictException('This time slot is already full');
+        }
         const newAppointment = transactionalEntityManager.create(Appointment, {
           doctor,
           patient,
           assigned_time,
           assigned_date: date,
         });
-        // Increment booked_count for the slot
-        slot.booked_count += 1;
-        await slotRepo.save(slot);
         const savedAppointment = await transactionalEntityManager.save(newAppointment);
-        return {
-          ...savedAppointment,
-          assigned_date: date,
-        };
+        return { ...savedAppointment, assigned_date: date };
       }
 
-      // SYSTEM slot logic (as before)
-      if (!schedule || !schedule.capacity_per_slot) {
-        throw new NotFoundException('Schedule not found for this doctor on this date');
+      // STREAM BOOKING (slotId not present)
+      // Validate doctorId and date
+      const { doctorId, date } = confirmAppointmentDto;
+      if (!doctorId || !date) {
+        throw new BadRequestException('doctorId and date are required for stream booking');
       }
-      const bookedCount = await transactionalEntityManager.count(Appointment, {
-        where: { doctor: { id: doctorId }, assigned_time },
+      // Find the stream schedule
+      const schedule = await transactionalEntityManager.findOne(DoctorSchedule, {
+        where: { doctor: { id: doctorId }, date },
       });
-      if (bookedCount >= schedule.capacity_per_slot) {
-        throw new ConflictException('This time slot is already full');
+      if (!schedule || !schedule.total_capacity) {
+        throw new NotFoundException('Stream schedule not found for this doctor on this date');
       }
+      // Check schedule type (should be stream)
+      // If you have a schedule_type field, check it here. Otherwise, check wave_mode is null.
+      if (schedule.wave_mode !== null && schedule.wave_mode !== undefined) {
+        throw new BadRequestException('This is not a stream schedule');
+      }
+      // Check capacity
+      const bookedCount = await transactionalEntityManager.count(Appointment, {
+        where: { doctor: { id: doctorId }, assigned_date: date },
+      });
+      if (bookedCount >= schedule.total_capacity) {
+        throw new ConflictException('Stream is already full');
+      }
+      // Calculate implicit duration
+      const [startHour, startMin] = schedule.consulting_start.split(':').map(Number);
+      const [endHour, endMin] = schedule.consulting_end.split(':').map(Number);
+      const totalDuration = (endHour * 60 + endMin) - (startHour * 60 + startMin);
+      const implicitDuration = Math.floor(totalDuration / schedule.total_capacity);
+      // Calculate next available time
+      const offset = bookedCount * implicitDuration;
+      const assignedMinutes = startHour * 60 + startMin + offset;
+      const assignedHour = Math.floor(assignedMinutes / 60);
+      const assignedMin = assignedMinutes % 60;
+      const assigned_time = `${String(assignedHour).padStart(2, '0')}:${String(assignedMin).padStart(2, '0')}`;
+      // Book the appointment
+      const doctor = await transactionalEntityManager.findOne(Doctor, { where: { id: doctorId } });
+      if (!doctor) throw new NotFoundException('Doctor not found');
       const newAppointment = transactionalEntityManager.create(Appointment, {
         doctor,
         patient,
@@ -175,10 +213,7 @@ export class AppointmentsService {
         assigned_date: date,
       });
       const savedAppointment = await transactionalEntityManager.save(newAppointment);
-      return {
-        ...savedAppointment,
-        assigned_date: date,
-      };
+      return { ...savedAppointment, assigned_date: date };
     });
   }
   // The Repositories are declared here, but injected in the constructor
