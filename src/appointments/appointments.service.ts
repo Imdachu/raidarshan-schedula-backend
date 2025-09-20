@@ -146,6 +146,7 @@ export class AppointmentsService {
           doctor,
           patient,
           assigned_time,
+          assigned_date: date,
         });
         // Increment booked_count for the slot
         slot.booked_count += 1;
@@ -171,6 +172,7 @@ export class AppointmentsService {
         doctor,
         patient,
         assigned_time,
+        assigned_date: date,
       });
       const savedAppointment = await transactionalEntityManager.save(newAppointment);
       return {
