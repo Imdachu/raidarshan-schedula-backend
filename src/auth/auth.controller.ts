@@ -1,3 +1,7 @@
+import { RegisterDoctorDto } from './dto/register-doctor.dto';
+import { Roles } from './roles.decorator';
+import { RolesGuard } from './roles.guard';
+import { UserRole } from '../users/user.entity';
 
 import { LoginDto } from './dto/login.dto';
 
@@ -15,6 +19,12 @@ import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 
 @Controller('api/v1/auth')
 export class AuthController {
+  @Post('register-doctor')
+  @Roles(UserRole.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async registerDoctor(@Body(ValidationPipe) registerDoctorDto: RegisterDoctorDto) {
+    return this.authService.registerDoctor(registerDoctorDto);
+  }
   @Post('login')
   async login(@Body(ValidationPipe) loginDto: LoginDto) {
     return this.authService.login(loginDto);

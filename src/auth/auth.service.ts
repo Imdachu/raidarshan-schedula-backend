@@ -1,3 +1,5 @@
+import { RegisterDoctorDto } from './dto/register-doctor.dto';
+import { Doctor } from '../doctors/doctor.entity';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
 import { RegisterPatientDto } from './dto/register-patient.dto';
@@ -46,8 +48,59 @@ export class AuthService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Patient)
     private readonly patientRepository: Repository<Patient>,
+    @InjectRepository(Doctor)
+    private readonly doctorRepository: Repository<Doctor>,
     private readonly jwtService: JwtService,
   ) {}
+  async registerDoctor(dto: RegisterDoctorDto) {
+    // 1. Check for existing user
+    const existingUser = await this.userRepository.findOne({ where: { email: dto.email } });
+    if (existingUser) {
+      throw new ConflictException('A user with this email already exists.');
+    }
+
+    // 2. Hash password
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    // 3. Create User entity
+    const user = this.userRepository.create({
+      email: dto.email,
+      password_hash: hashedPassword,
+      role: UserRole.DOCTOR,
+      is_verified: true,
+      provider: AuthProvider.EMAIL,
+      name: dto.name,
+    });
+    await this.userRepository.save(user);
+
+    // 4. Create Doctor entity
+    const doctor = this.doctorRepository.create({
+      name: dto.name,
+      specialization: dto.specialization,
+      location: dto.location,
+      schedule_type: dto.schedule_type,
+      // If you have a user relation, add: user: user
+    });
+    await this.doctorRepository.save(doctor);
+
+    // 5. Return user and doctor (excluding password)
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        is_verified: user.is_verified,
+        name: user.name,
+      },
+      doctor: {
+        id: doctor.id,
+        name: doctor.name,
+        specialization: doctor.specialization,
+        location: doctor.location,
+        schedule_type: doctor.schedule_type,
+      },
+    };
+  }
 
   async googleLogin(req) {
     if (!req.user) {
