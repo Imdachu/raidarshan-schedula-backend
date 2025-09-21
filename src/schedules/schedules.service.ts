@@ -61,7 +61,7 @@ export class SchedulesService {
       });
 
       for (const sched of existingSchedules) {
-        // Exact match
+        // Block exact duplicate for any mode (including stream)
         if (
           sched.consulting_start === createScheduleDto.consultingStart &&
           sched.consulting_end === createScheduleDto.consultingEnd &&
@@ -69,15 +69,25 @@ export class SchedulesService {
         ) {
           throw new BadRequestException('A schedule already exists for this doctor on this date and time slot.');
         }
-        // Overlap check (pad time strings to HH:mm:ss before parsing)
+        // Overlap check for any mode (including stream)
         const existStart = Date.parse(`1970-01-01T${padTimeString(sched.consulting_start)}`);
         const existEnd = Date.parse(`1970-01-01T${padTimeString(sched.consulting_end)}`);
-        // Only check overlap for same wave_mode
         if (sched.wave_mode === createScheduleDto.waveMode) {
           if (
             (newStart < existEnd && newEnd > existStart) // overlap
           ) {
             throw new BadRequestException('This time range overlaps with an existing schedule for this doctor on this date.');
+          }
+        }
+        // For stream mode, also block overlap with other stream schedules (even if wave_mode is null)
+        if (
+          (sched.wave_mode === null || sched.wave_mode === undefined) &&
+          (createScheduleDto.waveMode === null || createScheduleDto.waveMode === undefined)
+        ) {
+          if (
+            (newStart < existEnd && newEnd > existStart)
+          ) {
+            throw new BadRequestException('This time range overlaps with an existing stream schedule for this doctor on this date.');
           }
         }
       }
