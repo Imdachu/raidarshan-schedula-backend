@@ -281,3 +281,32 @@ Books an available time slot for the authenticated patient. This endpoint is tra
 
 -   **Success Response (201 Created):**
     Returns the full, newly created appointment object.
+
+
+    ## Get Appointment Details
+
+### GET `/api/v1/appointments/{id}`
+
+Retrieves the full details for a single appointment, including the associated doctor and patient information.
+
+-   **Success Response (200 OK):**
+
+    ```json
+    {
+        "id": "appointment-uuid",
+        "status": "confirmed",
+        "assigned_date": "2025-09-25",
+        "assigned_time": "09:00",
+        "doctor": {
+            "id": "doctor-uuid",
+            "name": "Dr. Susan Bones",
+            "specialization": "Orthopedics",
+            ...
+        },
+        "patient": {
+            "id": "patient-uuid",
+            "name": "John Doe",
+            ...
+        }
+    }
+    ```
