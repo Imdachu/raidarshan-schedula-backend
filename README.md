@@ -228,3 +228,39 @@ This defines a block of consulting time, slot duration, and capacity per slot.
   "slotDuration": 30,
   "capacityPerSlot": 5
 }
+
+## Doctor Available Slots
+
+### GET `/api/v1/doctors/{doctorId}/available-slots`
+
+Retrieves the available time slots for a specific doctor on a given date. This endpoint dynamically generates the slots based on the doctor's scheduling rules.
+
+-   **Query Parameters:**
+    -   `date` (string, required): The date to check for availability in `YYYY-MM-DD` format.
+
+-   **Success Response (200 OK):**
+
+    ```json
+    {
+        "doctorId": "doctor-uuid",
+        "date": "2025-09-29",
+        "slots": [
+            {
+                "slotId": "doctor-uuid-20250929-0900",
+                "startTime": "09:00",
+                "endTime": "09:30",
+                "capacity": 4,
+                "available": 4
+            },
+            {
+                "slotId": "doctor-uuid-20250929-0930",
+                "startTime": "09:30",
+                "endTime": "10:00",
+                "capacity": 4,
+                "available": 3
+            }
+        ]
+    }
+    ```
+
+    
