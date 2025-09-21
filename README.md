@@ -310,3 +310,37 @@ Retrieves the full details for a single appointment, including the associated do
         }
     }
     ```
+    ## List Patient Appointments
+
+### GET `/api/v1/appointments`
+
+Retrieves a list of appointments for the authenticated patient. This endpoint supports filtering by status.
+
+-   **Authorization:** Patient's JWT Token required.
+
+-   **Query Parameters:**
+    -   `status` (string, optional): Filter the appointments. Can be one of `upcoming`, `past`, or `cancelled`.
+
+-   **Success Response (200 OK):**
+    Returns an array of appointment objects that match the filter criteria.
+
+    ```json
+    [
+        {
+            "id": "appointment-uuid",
+            "status": "confirmed",
+            "assigned_date": "2025-09-27",
+            "assigned_time": "09:00",
+            "doctor": {
+                "id": "doctor-uuid",
+                "name": "Dr. Susan Bones",
+                ...
+            },
+            "patient": {
+                "id": "patient-uuid",
+                "name": "John Doe",
+                ...
+            }
+        }
+    ]
+    ```
