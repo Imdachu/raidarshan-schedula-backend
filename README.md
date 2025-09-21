@@ -207,3 +207,106 @@ src/
 ```
 
 ---
+## System-Generated Wave Schedule Creation
+
+### Endpoint
+`POST /api/v1/doctors/{doctorId}/schedule`
+
+### Description
+Creates a **system-generated wave schedule** for a doctor.  
+This defines a block of consulting time, slot duration, and capacity per slot.  
+**Slots are not stored in the database**—they are generated dynamically based on the schedule parameters.
+
+### Request Body Example
+```json
+{
+  "scheduleType": "wave",
+  "waveMode": "system",
+  "date": "2025-09-22",
+  "consultingStart": "09:00:00",
+  "consultingEnd": "12:00:00",
+  "slotDuration": 30,
+  "capacityPerSlot": 5
+}
+
+## Doctor Available Slots
+
+### GET `/api/v1/doctors/{doctorId}/available-slots`
+
+Retrieves the available time slots for a specific doctor on a given date. This endpoint dynamically generates the slots based on the doctor's scheduling rules.
+
+-   **Query Parameters:**
+    -   `date` (string, required): The date to check for availability in `YYYY-MM-DD` format.
+
+-   **Success Response (200 OK):**
+
+    ```json
+    {
+        "doctorId": "doctor-uuid",
+        "date": "2025-09-29",
+        "slots": [
+            {
+                "slotId": "doctor-uuid-20250929-0900",
+                "startTime": "09:00",
+                "endTime": "09:30",
+                "capacity": 4,
+                "available": 4
+            },
+            {
+                "slotId": "doctor-uuid-20250929-0930",
+                "startTime": "09:30",
+                "endTime": "10:00",
+                "capacity": 4,
+                "available": 3
+            }
+        ]
+    }
+    ```
+
+    ## Confirm Appointment
+
+### POST `/api/v1/appointments/confirm`
+
+Books an available time slot for the authenticated patient. This endpoint is transactional and validates slot capacity in real-time to prevent overbooking.
+
+-   **Authorization:** Patient's JWT Token required.
+
+-   **Request Body:**
+
+    ```json
+    {
+        "slotId": "{doctorId}-{date}-{startTime}"
+    }
+    ```
+
+-   **Success Response (201 Created):**
+    Returns the full, newly created appointment object.
+
+
+    ## Get Appointment Details
+
+### GET `/api/v1/appointments/{id}`
+
+Retrieves the full details for a single appointment, including the associated doctor and patient information.
+
+-   **Success Response (200 OK):**
+
+    ```json
+    {
+        "id": "appointment-uuid",
+        "status": "confirmed",
+        "assigned_date": "2025-09-25",
+        "assigned_time": "09:00",
+        "doctor": {
+            "id": "doctor-uuid",
+            "name": "Dr. Susan Bones",
+            "specialization": "Orthopedics",
+            ...
+        },
+        "patient": {
+            "id": "patient-uuid",
+            "name": "John Doe",
+            ...
+        }
+    }
+    ```
