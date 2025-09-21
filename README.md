@@ -207,3 +207,24 @@ src/
 ```
 
 ---
+## System-Generated Wave Schedule Creation
+
+### Endpoint
+`POST /api/v1/doctors/{doctorId}/schedule`
+
+### Description
+Creates a **system-generated wave schedule** for a doctor.  
+This defines a block of consulting time, slot duration, and capacity per slot.  
+**Slots are not stored in the database**—they are generated dynamically based on the schedule parameters.
+
+### Request Body Example
+```json
+{
+  "scheduleType": "wave",
+  "waveMode": "system",
+  "date": "2025-09-22",
+  "consultingStart": "09:00:00",
+  "consultingEnd": "12:00:00",
+  "slotDuration": 30,
+  "capacityPerSlot": 5
+}
