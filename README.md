@@ -263,4 +263,21 @@ Retrieves the available time slots for a specific doctor on a given date. This e
     }
     ```
 
-    
+    ## Confirm Appointment
+
+### POST `/api/v1/appointments/confirm`
+
+Books an available time slot for the authenticated patient. This endpoint is transactional and validates slot capacity in real-time to prevent overbooking.
+
+-   **Authorization:** Patient's JWT Token required.
+
+-   **Request Body:**
+
+    ```json
+    {
+        "slotId": "{doctorId}-{date}-{startTime}"
+    }
+    ```
+
+-   **Success Response (201 Created):**
+    Returns the full, newly created appointment object.
