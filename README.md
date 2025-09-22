@@ -207,3 +207,194 @@ src/
 ```
 
 ---
+## System-Generated Wave Schedule Creation
+
+### Endpoint
+`POST /api/v1/doctors/{doctorId}/schedule`
+
+### Description
+Creates a **system-generated wave schedule** for a doctor.  
+This defines a block of consulting time, slot duration, and capacity per slot.  
+**Slots are not stored in the database**—they are generated dynamically based on the schedule parameters.
+
+### Request Body Example
+```json
+{
+  "scheduleType": "wave",
+  "waveMode": "system",
+  "date": "2025-09-22",
+  "consultingStart": "09:00:00",
+  "consultingEnd": "12:00:00",
+  "slotDuration": 30,
+  "capacityPerSlot": 5
+}
+
+## Doctor Available Slots
+
+### GET `/api/v1/doctors/{doctorId}/available-slots`
+
+Retrieves the available time slots for a specific doctor on a given date. This endpoint dynamically generates the slots based on the doctor's scheduling rules.
+
+-   **Query Parameters:**
+    -   `date` (string, required): The date to check for availability in `YYYY-MM-DD` format.
+
+-   **Success Response (200 OK):**
+
+    ```json
+    {
+        "doctorId": "doctor-uuid",
+        "date": "2025-09-29",
+        "slots": [
+            {
+                "slotId": "doctor-uuid-20250929-0900",
+                "startTime": "09:00",
+                "endTime": "09:30",
+                "capacity": 4,
+                "available": 4
+            },
+            {
+                "slotId": "doctor-uuid-20250929-0930",
+                "startTime": "09:30",
+                "endTime": "10:00",
+                "capacity": 4,
+                "available": 3
+            }
+        ]
+    }
+    ```
+
+    ## Confirm Appointment
+
+### POST `/api/v1/appointments/confirm`
+
+Books an available time slot for the authenticated patient. This endpoint is transactional and validates slot capacity in real-time to prevent overbooking.
+
+-   **Authorization:** Patient's JWT Token required.
+
+-   **Request Body:**
+
+    ```json
+    {
+        "slotId": "{doctorId}-{date}-{startTime}"
+    }
+    ```
+
+-   **Success Response (201 Created):**
+    Returns the full, newly created appointment object.
+
+
+    ## Get Appointment Details
+
+### GET `/api/v1/appointments/{id}`
+
+Retrieves the full details for a single appointment, including the associated doctor and patient information.
+
+-   **Success Response (200 OK):**
+
+    ```json
+    {
+        "id": "appointment-uuid",
+        "status": "confirmed",
+        "assigned_date": "2025-09-25",
+        "assigned_time": "09:00",
+        "doctor": {
+            "id": "doctor-uuid",
+            "name": "Dr. Susan Bones",
+            "specialization": "Orthopedics",
+            ...
+        },
+        "patient": {
+            "id": "patient-uuid",
+            "name": "John Doe",
+            ...
+        }
+    }
+    ```
+    ## List Patient Appointments
+
+### GET `/api/v1/appointments`
+
+Retrieves a list of appointments for the authenticated patient. This endpoint supports filtering by status.
+
+-   **Authorization:** Patient's JWT Token required.
+
+-   **Query Parameters:**
+    -   `status` (string, optional): Filter the appointments. Can be one of `upcoming`, `past`, or `cancelled`.
+
+-   **Success Response (200 OK):**
+    Returns an array of appointment objects that match the filter criteria.
+
+    ```json
+    [
+        {
+            "id": "appointment-uuid",
+            "status": "confirmed",
+            "assigned_date": "2025-09-27",
+            "assigned_time": "09:00",
+            "doctor": {
+                "id": "doctor-uuid",
+                "name": "Dr. Susan Bones",
+                ...
+            },
+            "patient": {
+                "id": "patient-uuid",
+                "name": "John Doe",
+                ...
+            }
+        }
+    ]
+    ```
+    ## Register a New Doctor (Admin Only)
+
+### POST `/api/v1/auth/register-doctor`
+
+Securely creates a new doctor account. This is a protected endpoint and can only be accessed by an authenticated administrator.
+
+-   **Authorization:** Admin's JWT Token required.
+
+-   **Request Body:**
+
+    ```json
+    {
+        "email": "new.doctor@example.com",
+        "password": "DoctorPassword123",
+        "name": "Dr. Emily Carter",
+        "specialization": "Pediatrics",
+        "location": "Mumbai",
+        "schedule_type": "wave"
+    }
+    ```
+
+-   **Success Response (201 Created):**
+    Returns the newly created user and doctor profile objects.
+
+    ## Create Manual Doctor Slots
+
+### POST `/api/v1/doctors/{doctorId}/slots`
+
+Allows an authenticated doctor to create specific, manually-defined time slots for a given day. This provides granular control over their availability.
+
+-   **Authorization:** Doctor's JWT Token required.
+
+-   **Request Body:**
+
+    ```json
+    {
+        "date": "2025-09-26",
+        "slots": [
+            {
+                "startTime": "10:00",
+                "endTime": "10:20",
+                "capacity": 1
+            },
+            {
+                "startTime": "11:00",
+                "endTime": "11:30",
+                "capacity": 3
+            }
+        ]
+    }
+    ```
+
+-   **Success Response (201 Created):**
+    Returns an array of the newly created slot objects.
