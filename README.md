@@ -398,3 +398,24 @@ Allows an authenticated doctor to create specific, manually-defined time slots f
 
 -   **Success Response (201 Created):**
     Returns an array of the newly created slot objects.
+## Mark Appointment as Completed (Doctor/Admin Only)
+
+### PATCH `/api/v1/appointments/{id}/complete`
+
+Updates the status of an appointment to `completed`. This is typically used by a doctor after a consultation has finished.
+
+-   **Authorization:** Doctor's or Admin's JWT Token required.
+
+-   **Success Response (200 OK):**
+    Returns the updated appointment object with the new status.
+
+    ```json
+    {
+        "id": "appointment-uuid",
+        "status": "completed",
+        "assigned_date": "2025-09-25",
+        "assigned_time": "09:00",
+        "doctor": { ... },
+        "patient": { ... }
+    }
+    ```
