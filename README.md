@@ -367,3 +367,34 @@ Securely creates a new doctor account. This is a protected endpoint and can only
 
 -   **Success Response (201 Created):**
     Returns the newly created user and doctor profile objects.
+
+    ## Create Manual Doctor Slots
+
+### POST `/api/v1/doctors/{doctorId}/slots`
+
+Allows an authenticated doctor to create specific, manually-defined time slots for a given day. This provides granular control over their availability.
+
+-   **Authorization:** Doctor's JWT Token required.
+
+-   **Request Body:**
+
+    ```json
+    {
+        "date": "2025-09-26",
+        "slots": [
+            {
+                "startTime": "10:00",
+                "endTime": "10:20",
+                "capacity": 1
+            },
+            {
+                "startTime": "11:00",
+                "endTime": "11:30",
+                "capacity": 3
+            }
+        ]
+    }
+    ```
+
+-   **Success Response (201 Created):**
+    Returns an array of the newly created slot objects.
