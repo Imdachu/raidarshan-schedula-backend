@@ -344,3 +344,26 @@ Retrieves a list of appointments for the authenticated patient. This endpoint su
         }
     ]
     ```
+    ## Register a New Doctor (Admin Only)
+
+### POST `/api/v1/auth/register-doctor`
+
+Securely creates a new doctor account. This is a protected endpoint and can only be accessed by an authenticated administrator.
+
+-   **Authorization:** Admin's JWT Token required.
+
+-   **Request Body:**
+
+    ```json
+    {
+        "email": "new.doctor@example.com",
+        "password": "DoctorPassword123",
+        "name": "Dr. Emily Carter",
+        "specialization": "Pediatrics",
+        "location": "Mumbai",
+        "schedule_type": "wave"
+    }
+    ```
+
+-   **Success Response (201 Created):**
+    Returns the newly created user and doctor profile objects.
