@@ -13,6 +13,7 @@ import { Patient } from './patients/patient.entity';
 import { DoctorSchedule } from './schedules/schedule.entity';
 import { Slot } from './slots/slot.entity';
 import { User } from './users/user.entity';
+import { SeederModule } from './seeder/seeder.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { User } from './users/user.entity';
         return localDbConfig;
       },
     }),
+    SeederModule,
   ],
   controllers: [HelloController],
   providers: [],
