@@ -21,6 +21,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "build": "tsc -p tsconfig.json",
+    "postbuild": "npm run migration:run",
     "start:prod": "node dist/src/main.js",  
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate",
