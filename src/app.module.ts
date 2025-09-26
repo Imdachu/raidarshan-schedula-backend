@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { TypeOrmModule, TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { HelloController } from './hello/hello.controller';
 import { AuthModule } from './auth/auth.module';
 import { DoctorsModule } from './doctors/doctors.module';
@@ -25,32 +25,31 @@ import { User } from './users/user.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => {
+      useFactory: (config: ConfigService): TypeOrmModuleOptions => {
         const nodeEnv = config.get('NODE_ENV');
         const databaseUrl = config.get<string>('DATABASE_URL');
 
         console.log('🌍 NODE_ENV:', nodeEnv);
-        console.log('🔗 DATABASE_URL:', databaseUrl ? 'Loaded ✅' : 'Not Found ❌');
+        console.log('🔗 DATABASE_URL:', databaseUrl ? `Loaded ✅ (${databaseUrl.substring(0, 30)}...)` : 'Not Found ❌');
+
 
         if (nodeEnv === 'production') {
-          return {
+          if (!databaseUrl) {
+            throw new Error('DATABASE_URL environment variable is not set for production!');
+          }
+          const dbConfig: TypeOrmModuleOptions = {
             type: 'postgres',
             url: databaseUrl, // Render's database URL
             entities: [Appointment, Doctor, Patient, DoctorSchedule, Slot, User],
             synchronize: false, // Never auto-sync in production
             ssl: { rejectUnauthorized: false }, // Required for Render
           };
+          console.log('🚀 Using Production DB Config:', { ...dbConfig, url: '...REDACTED...' });
+          return dbConfig;
         }
 
         // Local development
-        console.log('⚠️ Using local DB config:', {
-          host: config.get('DB_HOST') || '127.0.0.1',
-          port: config.get('DB_PORT') || 5432,
-          username: config.get('DB_USERNAME'),
-          database: config.get('DB_DATABASE'),
-        });
-
-        return {
+        const localDbConfig: TypeOrmModuleOptions = {
           type: 'postgres',
           host: config.get('DB_HOST') || '127.0.0.1',
           port: parseInt(config.get('DB_PORT'), 10) || 5432,
@@ -61,6 +60,8 @@ import { User } from './users/user.entity';
           synchronize: true, // Only for local dev
           logging: ['query', 'error', 'schema'],
         };
+        console.log('⚠️ Using Local DB Config:', { ...localDbConfig, password: '...' });
+        return localDbConfig;
       },
     }),
   ],

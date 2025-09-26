@@ -1,26 +1,37 @@
-import { DataSource } from 'typeorm';
+import { DataSource, DataSourceOptions } from 'typeorm';
 import { config } from 'dotenv';
 config();
 
 const isProd = process.env.NODE_ENV === 'production';
 
-export const AppDataSource = new DataSource({
+const options: DataSourceOptions = {
   type: 'postgres',
-  url: isProd ? process.env.DATABASE_URL : undefined,
-  host: isProd ? undefined : process.env.DB_HOST,
-  port: isProd ? undefined : parseInt(process.env.DB_PORT || '5432', 10),
-  username: isProd ? undefined : process.env.DB_USERNAME,
-  password: isProd ? undefined : process.env.DB_PASSWORD,
-  database: isProd ? undefined : process.env.DB_DATABASE,
   schema: 'public',
+  synchronize: false,
   entities: [isProd ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts'],
   migrations: [isProd ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
-  synchronize: false,
-  logging: ['query', 'error', 'schema'],
-  ssl: isProd ? { rejectUnauthorized: false } : false,
-});
+  ...(isProd
+    ? {
+        url: process.env.DATABASE_URL,
+        logging: ['error'],
+        ssl: { rejectUnauthorized: false },
+      }
+    : {
+        host: process.env.DB_HOST,
+        port: parseInt(process.env.DB_PORT || '5432', 10),
+        username: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+        logging: ['query', 'error', 'schema'],
+      }),
+};
+
+if (isProd && !options.url) {
+  throw new Error('DATABASE_URL is not set in production environment for data-source.');
+}
+
+
+export const AppDataSource = new DataSource(options);
 
 // Debugging output
-console.log('TypeORM Config:');
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
+console.log('[data-source] TypeORM Config Initialized for NODE_ENV:', process.env.NODE_ENV);
