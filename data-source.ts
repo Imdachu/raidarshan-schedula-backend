@@ -13,11 +13,12 @@ const isProd = process.env.NODE_ENV === 'production';
 
 export default new DataSource({
   type: 'postgres',
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT, 10),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
+  url: isProd ? process.env.DATABASE_URL : undefined,
+  host: isProd ? undefined : process.env.DB_HOST,
+  port: isProd ? undefined : parseInt(process.env.DB_PORT, 10),
+  username: isProd ? undefined : process.env.DB_USERNAME,
+  password: isProd ? undefined : process.env.DB_PASSWORD,
+  database: isProd ? undefined : process.env.DB_DATABASE,
   schema: 'public',
   // entities: [User, Doctor, Patient, Appointment, DoctorSchedule ,Slot], // 👈 direct imports
   // migrations: ['src/migrations/*.ts'], // in dev, use .ts
@@ -25,4 +26,5 @@ export default new DataSource({
   migrations: [isProd ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
   synchronize: false,
   logging: !isProd,
+  ssl: isProd ? { rejectUnauthorized: false } : false,
 });
