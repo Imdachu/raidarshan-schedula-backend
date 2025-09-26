@@ -15,15 +15,14 @@
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "rxjs": "^7.8.2",
-    "typeorm": "^0.3.26",
-    "tsconfig-paths": "^4.2.0"
+    "typeorm": "^0.3.26"
   },
   "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
     "build": "tsc -p tsconfig.json",
     "postbuild": "npm run migration:run",
-    "start:prod": "node dist/src/main.js",  
+    "start:prod": "node dist/src/main.js",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./data-source.ts",
     "migration:generate": "npm run typeorm -- migration:generate",
     "migration:run": "npm run typeorm -- migration:run",
@@ -37,6 +36,7 @@
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
     "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
     "typescript": "^5.9.2"
   }
 }
