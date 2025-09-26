@@ -25,6 +25,7 @@ export default new DataSource({
   entities: [isProd ? 'dist/**/*.entity.js' : 'src/**/*.entity.ts'],
   migrations: [isProd ? 'dist/migrations/*.js' : 'src/migrations/*.ts'],
   synchronize: false,
-  logging: !isProd,
+  logging: ['query', 'error', 'schema'],
   ssl: isProd ? { rejectUnauthorized: false } : false,
 });
+console.log('DATABASE_URL:', process.env.DATABASE_URL);
