@@ -57,7 +57,7 @@ import { User } from './users/user.entity';
           password: config.get('DB_PASSWORD'),
           database: config.get('DB_DATABASE'),
           entities: [Appointment, Doctor, Patient, DoctorSchedule, Slot, User],
-          synchronize: true, // Only for local dev
+          synchronize: false, // Only for local dev
           logging: ['query', 'error', 'schema'],
         };
         console.log('⚠️ Using Local DB Config:', { ...localDbConfig, password: '...' });
