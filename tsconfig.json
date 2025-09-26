@@ -19,6 +19,6 @@
     "noFallthroughCasesInSwitch": false,
     "types": ["node"]
   },
-  "include": ["src/**/*", "data-source.ts"],
+  "include": ["src/**/*", "data-source.ts", "src/seeder/seeder.ts"],
   "exclude": ["node_modules", "dist"]
 }
