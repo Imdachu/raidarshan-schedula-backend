@@ -36,6 +36,7 @@ import { SeederModule } from './seeder/seeder.module'; // <-- Import SeederModul
           return {
             type: 'postgres',
             url: databaseUrl,
+            schema: 'public', 
             entities: [Appointment, Doctor, Patient, DoctorSchedule, Slot, User],
             migrations: [__dirname + '/../migrations/*{.ts,.js}'], // Reliable path
             synchronize: false,

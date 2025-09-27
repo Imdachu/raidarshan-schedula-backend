@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import { User } from './users/user.entity';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
