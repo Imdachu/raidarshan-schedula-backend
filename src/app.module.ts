@@ -13,7 +13,7 @@ import { Patient } from './patients/patient.entity';
 import { DoctorSchedule } from './schedules/schedule.entity';
 import { Slot } from './slots/slot.entity';
 import { User } from './users/user.entity';
-import { SeederModule } from './seeder/seeder.module';
+import { SeederModule } from './seeder/seeder.module'; // <-- Import SeederModule
 
 @Module({
   imports: [
@@ -29,28 +29,21 @@ import { SeederModule } from './seeder/seeder.module';
       useFactory: (config: ConfigService): TypeOrmModuleOptions => {
         const nodeEnv = config.get('NODE_ENV');
         const databaseUrl = config.get<string>('DATABASE_URL');
-
-        console.log('🌍 NODE_ENV:', nodeEnv);
-        console.log('🔗 DATABASE_URL:', databaseUrl ? `Loaded ✅ (${databaseUrl.substring(0, 30)}...)` : 'Not Found ❌');
-
-
         if (nodeEnv === 'production') {
           if (!databaseUrl) {
             throw new Error('DATABASE_URL environment variable is not set for production!');
           }
-          const dbConfig: TypeOrmModuleOptions = {
+          return {
             type: 'postgres',
-            url: databaseUrl, // Render's database URL
+            url: databaseUrl,
             entities: [Appointment, Doctor, Patient, DoctorSchedule, Slot, User],
-            synchronize: false, // Never auto-sync in production
-            ssl: { rejectUnauthorized: false }, // Required for Render
+            migrations: [__dirname + '/../migrations/*{.ts,.js}'], // Reliable path
+            synchronize: false,
+            ssl: { rejectUnauthorized: false },
           };
-          console.log('🚀 Using Production DB Config:', { ...dbConfig, url: '...REDACTED...' });
-          return dbConfig;
         }
-
-        // Local development
-        const localDbConfig: TypeOrmModuleOptions = {
+        // Local development config...
+        return {
           type: 'postgres',
           host: config.get('DB_HOST') || '127.0.0.1',
           port: parseInt(config.get('DB_PORT'), 10) || 5432,
@@ -58,14 +51,13 @@ import { SeederModule } from './seeder/seeder.module';
           password: config.get('DB_PASSWORD'),
           database: config.get('DB_DATABASE'),
           entities: [Appointment, Doctor, Patient, DoctorSchedule, Slot, User],
-          synchronize: false, // Only for local dev
+          migrations: [__dirname + '/../migrations/*{.ts,.js}'], // Reliable path
+          synchronize: false, 
           logging: ['query', 'error', 'schema'],
         };
-        console.log('⚠️ Using Local DB Config:', { ...localDbConfig, password: '...' });
-        return localDbConfig;
       },
     }),
-    SeederModule,
+    SeederModule, // <-- Add SeederModule here
   ],
   controllers: [HelloController],
   providers: [],
