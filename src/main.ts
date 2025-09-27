@@ -2,32 +2,46 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { SeederService } from './seeder/seeder.service';
-
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('DATABASE_URL:', process.env.DATABASE_URL);
+import * as bcrypt from 'bcrypt';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
   const dataSource = app.get(DataSource);
+
+  // --- Step 1: Run Migrations ---
+  // This creates the tables. The log shows this part is now working.
   await dataSource.runMigrations();
   console.log('✅ Migrations have been successfully executed.');
 
-  // --- 2. Run Seeder on Startup ---
-  const seeder = app.get(SeederService);
-  await seeder.seed();
-  console.log('✅ Seeding has been successfully completed.');
+  // --- Step 2: Manually Seed the Admin User ---
+  // This is the new, robust seeding logic.
+  const userRepo = dataSource.getRepository('users');
+  const adminExists = await userRepo.findOne({ where: { email: 'admin@schedula.com' } });
 
-   // Enable validation + transformation globally
+  if (!adminExists) {
+    console.log('Admin user not found, creating one...');
+    const salt = await bcrypt.genSalt();
+    const hashedPassword = await bcrypt.hash('AdminPassword123', salt);
+
+    // We use a raw query to bypass any potential service/repository issues.
+    await dataSource.query(
+      `INSERT INTO "users" (name, email, password_hash, role, provider, is_verified) VALUES ($1, $2, $3, $4, $5, $6)`,
+      ['Admin User', 'admin@schedula.com', hashedPassword, 'admin', 'email', true]
+    );
+    console.log('✅ Admin user has been successfully seeded.');
+  } else {
+    console.log('Admin user already exists. Skipping seed.');
+  }
+
   app.useGlobalPipes(
     new ValidationPipe({
-      transform: true, // allows @Transform decorators in DTOs to work
-      whitelist: true, // optional: strips properties not in DTO
-      forbidNonWhitelisted: false, // optional: throws error if extra properties are sent
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: false,
     }),
   );
-  await app.listen(process.env.PORT ||3000);
+
+  await app.listen(process.env.PORT || 3000);
   console.log(`🚀 Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

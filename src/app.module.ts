@@ -57,7 +57,6 @@ import { SeederModule } from './seeder/seeder.module'; // <-- Import SeederModul
         };
       },
     }),
-    SeederModule, // <-- Add SeederModule here
   ],
   controllers: [HelloController],
   providers: [],
