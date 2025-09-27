@@ -53,7 +53,6 @@ import { SeederModule } from './seeder/seeder.module'; // <-- Import SeederModul
           database: config.get('DB_DATABASE'),
           entities: [Appointment, Doctor, Patient, DoctorSchedule, Slot, User],
           migrations: [__dirname + '/../migrations/*{.ts,.js}'], // Reliable path
-          migrationsRun: true,
           synchronize: false, 
           logging: ['query', 'error', 'schema'],
         };
