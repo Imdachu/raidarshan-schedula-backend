@@ -229,5 +229,11 @@ async updateOnboardingStep(userId: string, step: number) {
 
   return { message: 'Onboarding step updated successfully', step: user.onboarding_step };
 }
+
+async countAdminUsers(): Promise<number> {
+  return await this.userRepository.count({ 
+    where: { role: UserRole.ADMIN } 
+  });
+}
         
 }
