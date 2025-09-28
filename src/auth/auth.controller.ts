@@ -28,15 +28,12 @@ export class AuthController {
 
   // Temporary endpoint for initial admin creation - REMOVE IN PRODUCTION
   @Post('create-initial-admin')
-  async createInitialAdmin(@Body(ValidationPipe) registerDoctorDto: RegisterDoctorDto) {
-    // Check if any admin users already exist
-    const existingAdmins = await this.authService.countAdminUsers();
-    if (existingAdmins > 0) {
-      return { 
-        error: 'Admin users already exist. Use register-doctor endpoint with admin JWT.' 
-      };
-    }
-    return this.authService.registerDoctor(registerDoctorDto);
+  async createInitialAdmin(@Body(ValidationPipe) createAdminDto: {
+    email: string;
+    password: string;
+    name: string;
+  }) {
+    return this.authService.registerInitialAdmin(createAdminDto);
   }
   @Post('login')
   async login(@Body(ValidationPipe) loginDto: LoginDto) {

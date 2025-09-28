@@ -235,5 +235,53 @@ async countAdminUsers(): Promise<number> {
     where: { role: UserRole.ADMIN } 
   });
 }
+
+async registerInitialAdmin(registerDto: { email: string; password: string; name: string }): Promise<any> {
+  // Check if any admin users already exist
+  const existingAdmins = await this.countAdminUsers();
+  if (existingAdmins > 0) {
+    throw new ConflictException('Admin users already exist. Use register-doctor endpoint with admin JWT.');
+  }
+
+  // Check if user already exists
+  const existingUser = await this.userRepository.findOne({ 
+    where: { email: registerDto.email } 
+  });
+  if (existingUser) {
+    throw new ConflictException('User already exists');
+  }
+
+  // Hash password
+  const saltRounds = 10;
+  const hashedPassword = await bcrypt.hash(registerDto.password, saltRounds);
+
+  // Create ADMIN user (not doctor)
+  const adminUser = this.userRepository.create({
+    email: registerDto.email,
+    password_hash: hashedPassword,
+    name: registerDto.name,
+    role: UserRole.ADMIN,  // ← Force ADMIN role
+    is_verified: true,     // ← Auto-verify admin
+    provider: AuthProvider.EMAIL
+  });
+
+  const savedUser = await this.userRepository.save(adminUser);
+
+  // Generate JWT token
+  const payload = { email: savedUser.email, sub: savedUser.id, role: savedUser.role };
+  const token = this.jwtService.sign(payload);
+
+  return {
+    message: 'Admin user created successfully',
+    user: {
+      id: savedUser.id,
+      email: savedUser.email,
+      name: savedUser.name,
+      role: savedUser.role,
+      is_verified: savedUser.is_verified
+    },
+    access_token: token
+  };
+}
         
 }
