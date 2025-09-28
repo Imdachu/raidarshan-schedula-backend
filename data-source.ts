@@ -15,9 +15,9 @@ const prodOptions: DataSourceOptions = {
   ...commonOptions,
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  // Use __dirname for more reliable paths
-  entities: [__dirname + '/**/*.entity.js'],
-  migrations: [__dirname + '/migrations/*.js'],
+  // Fix the entity paths for production build structure
+  entities: ['dist/src/**/*.entity.js'],
+  migrations: ['dist/src/migrations/*.js'],
   logging: ['error', 'migration', 'query'], // Add more logging
   ssl: { rejectUnauthorized: false },
   // Add this to ensure migrations run
