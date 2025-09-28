@@ -34,8 +34,17 @@ const devOptions: DataSourceOptions = {
   logging: ['query', 'error', 'schema'],
 };
 
-// This is the configuration object we will import into our app module
 export const dataSourceOptions: DataSourceOptions = isProd ? prodOptions : devOptions;
 
-// This is the DataSource instance used by the TypeORM CLI
+// --- DEBUGGING STATEMENT ---
+// We cast to `any` here just for the debug log to safely access the url property.
+const logOptions = dataSourceOptions as any;
+console.log("--- [DEBUG] MIGRATION SCRIPT CONFIG ---");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("Connection method:", logOptions.url ? `URL (${logOptions.url.substring(0, 25)}...)` : "Host/Port");
+console.log("Entities Path:", logOptions.entities);
+console.log("Migrations Path:", logOptions.migrations);
+console.log("---------------------------------------");
+// --- END DEBUGGING ---
+
 export default new DataSource(dataSourceOptions);
