@@ -22,11 +22,11 @@
     "typeorm": "^0.3.26",
     "typescript": "^5.9.2"
   },
-  "scripts": {
+ "scripts": {
     "start": "nest start",
     "start:dev": "nest start --watch",
     "build": "nest build",
-    "start:prod": "npm run migration:run && sleep 10 && node dist/src/main",
+    "start:prod": "node dist/src/main",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js -d ./data-source.ts",
     "typeorm:prod": "node ./node_modules/typeorm/cli.js -d ./dist/data-source.js",
     "migration:generate": "npm run typeorm -- migration:generate",

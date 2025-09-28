@@ -15,10 +15,13 @@ const prodOptions: DataSourceOptions = {
   ...commonOptions,
   type: 'postgres',
   url: process.env.DATABASE_URL,
-  entities: ['dist/**/*.entity.js'],
-  migrations: ['dist/migrations/*.js'],
-  logging: ['error'],
+  // Use __dirname for more reliable paths
+  entities: [__dirname + '/**/*.entity.js'],
+  migrations: [__dirname + '/migrations/*.js'],
+  logging: ['error', 'migration', 'query'], // Add more logging
   ssl: { rejectUnauthorized: false },
+  // Add this to ensure migrations run
+  migrationsRun: false, // Don't auto-run, we do it manually
 };
 
 const devOptions: DataSourceOptions = {
@@ -36,15 +39,14 @@ const devOptions: DataSourceOptions = {
 
 export const dataSourceOptions: DataSourceOptions = isProd ? prodOptions : devOptions;
 
-// --- DEBUGGING STATEMENT ---
-// We cast to `any` here just for the debug log to safely access the url property.
+// Enhanced debugging
 const logOptions = dataSourceOptions as any;
 console.log("--- [DEBUG] MIGRATION SCRIPT CONFIG ---");
 console.log("NODE_ENV:", process.env.NODE_ENV);
 console.log("Connection method:", logOptions.url ? `URL (${logOptions.url.substring(0, 25)}...)` : "Host/Port");
 console.log("Entities Path:", logOptions.entities);
 console.log("Migrations Path:", logOptions.migrations);
+console.log("Current directory:", __dirname);
 console.log("---------------------------------------");
-// --- END DEBUGGING ---
 
 export default new DataSource(dataSourceOptions);
