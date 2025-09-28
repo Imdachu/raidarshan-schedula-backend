@@ -28,7 +28,7 @@ export class AuthController {
 
   // Temporary endpoint for initial admin creation - REMOVE IN PRODUCTION
   @Post('create-initial-admin')
-  async createInitialAdmin(@Body(ValidationPipe) createAdminDto: {
+  async createInitialAdmin(@Body() createAdminDto: {
     email: string;
     password: string;
     name: string;

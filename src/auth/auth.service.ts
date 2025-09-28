@@ -236,7 +236,7 @@ async countAdminUsers(): Promise<number> {
   });
 }
 
-async registerInitialAdmin(registerDto: { email: string; password: string; name: string }): Promise<any> {
+async registerInitialAdmin(registerDto: any): Promise<any> {
   // Check if any admin users already exist
   const existingAdmins = await this.countAdminUsers();
   if (existingAdmins > 0) {
