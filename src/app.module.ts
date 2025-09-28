@@ -7,6 +7,7 @@ import { DoctorsModule } from './doctors/doctors.module';
 import { SchedulesModule } from './schedules/schedules.module';
 import { AppointmentsModule } from './appointments/appointments.module';
 import { SlotsModule } from './slots/slots.module';
+import { SeederModule } from './seeder/seeder.module';
 import { dataSourceOptions } from '../data-source'; // <-- Import the unified config
 
 @Module({
@@ -16,6 +17,7 @@ import { dataSourceOptions } from '../data-source'; // <-- Import the unified co
     SchedulesModule,
     AppointmentsModule,
     SlotsModule,
+    SeederModule,
     ConfigModule.forRoot({
       isGlobal: true,
     }),

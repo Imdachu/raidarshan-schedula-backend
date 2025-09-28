@@ -81,4 +81,22 @@ export class SeederService {
 
     console.log('Seeding complete!');
   }
+
+  async checkAdminExists(): Promise<boolean> {
+    const admin = await this.userRepository.findOne({ 
+      where: { email: 'admin@schedula.com' } 
+    });
+    return !!admin;
+  }
+
+  async getDoctorCount(): Promise<number> {
+    return await this.doctorRepository.count();
+  }
+
+  async checkPatientExists(): Promise<boolean> {
+    const patient = await this.userRepository.findOne({ 
+      where: { email: 'darshan.rai@example.com' } 
+    });
+    return !!patient;
+  }
 }
