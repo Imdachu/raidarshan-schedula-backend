@@ -27,6 +27,7 @@ import { SlotsModule } from './slots/slots.module';
           return {
             type: 'postgres',
             url: configService.get<string>('DATABASE_URL'),
+            schema: 'public',
             entities: [__dirname + '/**/*.entity{.js,.ts}'],
             synchronize: false,
             ssl: { rejectUnauthorized: false },
