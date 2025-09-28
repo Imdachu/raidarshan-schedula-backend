@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "@nestjs/cli": "^11.0.10",
     "@nestjs/common": "^11.1.6",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.6",
@@ -10,13 +11,15 @@
     "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
-    "dotenv": "^17.2.2",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
     "rxjs": "^7.8.2",
-    "typeorm": "^0.3.27"
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typeorm": "^0.3.26",
+    "typescript": "^5.9.2"
   },
   "scripts": {
     "start": "nest start",
@@ -31,13 +34,9 @@
     "seed": "ts-node src/seeder/seeder.ts"
   },
   "devDependencies": {
-    "@nestjs/cli": "^11.0.10",
     "@types/bcrypt": "^6.0.0",
-    "@types/node": "^24.5.2",
+    "@types/node": "^24.3.1",
     "@types/passport-google-oauth20": "^2.0.16",
-    "@types/passport-jwt": "^4.0.1",
-    "ts-node": "^10.9.2",
-    "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.9.2"
+    "@types/passport-jwt": "^4.0.1"
   }
 }
